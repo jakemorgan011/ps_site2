@@ -8,7 +8,7 @@ let sketch_horse = function(p){
     p.normalMaterial();
   };
   p.preload = function(){
-    horse = p.loadModel('/src/assets/horse.obj');
+    horse = p.loadModel('src/assets/horse.OBJ');
   }
   
   p.draw = function(){
