@@ -29,12 +29,17 @@ let sketch_horse = function(p){
 }
 
 let sketch_cube = function(p){
+  let c = p.color(255,255,255,0);
   p.setup = function(){
     p.createCanvas(300,300,p.WEBGL);
     p.angleMode(p.DEGREES);
     p.normalMaterial();
   };
   p.draw = function(){
+    let a = p.createA('https://publicservices.bandcamp.com/album/love-songs','public services - bandcamp','_blank');
+    a.style('background',c);
+    a.style('text-decoration','none');
+    a.style('font-size','15px');
     p.background(252,252,255);
     //box
     p.push();
@@ -42,6 +47,7 @@ let sketch_cube = function(p){
     p.rotateWithFrameCount(0);
     p.box(75,75,75);
     p.pop();
+    a.position(75,150);
   }
   p.rotateWithFrameCount = function(offset){
     p.rotateZ(p.frameCount - offset);
@@ -167,7 +173,7 @@ let sketch_shader = function(p){
     
       st = rotate2D(st,dist/(mdist/5.0)*PI*2.0);
     
-      gl_FragColor = vec4(vec3(concentricCircles(st, vec2(0.0,0.0), 5.0, 5.0),concentricCircles(st, vec2(0.0,0.0), 10.0, 10.0),concentricCircles(st, vec2(0.0,0.0), 20.0, 10.0)),1.0);
+      gl_FragColor = vec4(vec3(concentricCircles(st, vec2(0.0,0.0), 3.0, 1.5),concentricCircles(st, vec2(0.0,0.0), 10.0, 6.0),concentricCircles(st, vec2(0.0,0.0), 20.0, 10.0)),1.0);
   }
   `;
   let the_shader;
