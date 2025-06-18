@@ -190,7 +190,7 @@ let sketch_shader = function(p){
     p.push();
     p.rotateX(-p.mouseY);
     p.rotateY(-p.mouseX);
-    p.sphere(75);
+    p.torus(50,25);
     p.pop();
   }
 }
