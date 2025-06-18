@@ -33,7 +33,8 @@ let sketch_cube = function(p){
   p.setup = function(){
     let a = p.createA('https://publicservices.bandcamp.com/album/love-songs','public services - bandcamp','_blank');
     a.style('background',c);
-    a.style('text-decoration','none');
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
     a.style('font-size','15px');
     p.createCanvas(300,300,p.WEBGL);
     p.angleMode(p.DEGREES);
@@ -178,12 +179,19 @@ let sketch_shader = function(p){
   `;
   let the_shader;
   let shader_texture;
+  let c = p.color(255,255,255,0);
 
   p.setup = function(){
+    let a = p.createA('https://github.com/jakemorgan011','jake morgan - github','_blank');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     p.createCanvas(300,300,p.WEBGL);
     p.noStroke();
     p.angleMode(p.DEGREES);
     the_shader = p.createShader(vertexShader,fragmentShader);
+    a.position(87,140);
   }
   p.draw = function(){
     p.background(252,252,255);
