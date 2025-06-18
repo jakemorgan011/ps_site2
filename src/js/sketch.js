@@ -31,15 +31,16 @@ let sketch_horse = function(p){
 let sketch_cube = function(p){
   let c = p.color(255,255,255,0);
   p.setup = function(){
-    p.createCanvas(300,300,p.WEBGL);
-    p.angleMode(p.DEGREES);
-    p.normalMaterial();
-  };
-  p.draw = function(){
     let a = p.createA('https://publicservices.bandcamp.com/album/love-songs','public services - bandcamp','_blank');
     a.style('background',c);
     a.style('text-decoration','none');
     a.style('font-size','15px');
+    p.createCanvas(300,300,p.WEBGL);
+    p.angleMode(p.DEGREES);
+    p.normalMaterial();
+    a.position(75,150);
+  };
+  p.draw = function(){
     p.background(252,252,255);
     //box
     p.push();
@@ -47,7 +48,6 @@ let sketch_cube = function(p){
     p.rotateWithFrameCount(0);
     p.box(75,75,75);
     p.pop();
-    a.position(75,150);
   }
   p.rotateWithFrameCount = function(offset){
     p.rotateZ(p.frameCount - offset);
