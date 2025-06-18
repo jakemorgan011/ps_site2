@@ -2,10 +2,17 @@
 
 let sketch_horse = function(p){
   let horse;
+  let c = p.color(255,255,255,0);
   p.setup = function(){
+    let a = p.createA('https://www.instagram.com/publicservices.web/','public services - instagram','_blank');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     p.createCanvas(300,300,p.WEBGL);
     p.angleMode(p.DEGREES);
     p.normalMaterial();
+    a.position(75,150);
   };
   p.preload = function(){
     horse = p.loadModel('src/assets/horse.OBJ');
@@ -208,6 +215,29 @@ let sketch_shader = function(p){
     p.pop();
   }
 }
+
+let sketch_pulsar = function(p){
+  let pulsar_shader;
+  // figure out how to do this
+  let vertex_shader = `
+  `;
+  let fragment_shader = `
+  `;
+  let pulsar;
+  p.setup = function(){
+    pulsar_shader = createShader(vertex_shader,fagment_shader);
+    p.createCanvas(300,300,p.WEBGL);
+    p.noStroke();
+    p.angleMode(p.DEGREES);
+    let c = p.color(251,241,253);
+    /* check docs for this part this is the basics
+    pulsar = buildGeometry(() => {
+      put all the code here lol.
+    });
+     */
+  }
+}
+
 
 function calcAspect(){
 }
