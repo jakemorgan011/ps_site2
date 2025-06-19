@@ -2,10 +2,17 @@
 
 let sketch_horse = function(p){
   let horse;
+  let c = p.color(255,255,255,0);
   p.setup = function(){
+    let a = p.createA('https://www.instagram.com/publicservices.web/','public services - instagram','_blank');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     p.createCanvas(300,300,p.WEBGL);
     p.angleMode(p.DEGREES);
     p.normalMaterial();
+    a.position(75,150);
   };
   p.preload = function(){
     horse = p.loadModel('src/assets/horse.OBJ');
@@ -29,10 +36,17 @@ let sketch_horse = function(p){
 }
 
 let sketch_cube = function(p){
+  let c = p.color(255,255,255,0);
   p.setup = function(){
+    let a = p.createA('https://publicservices.bandcamp.com/album/love-songs','public services - bandcamp','_blank');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     p.createCanvas(300,300,p.WEBGL);
     p.angleMode(p.DEGREES);
     p.normalMaterial();
+    a.position(75,150);
   };
   p.draw = function(){
     p.background(252,252,255);
@@ -167,17 +181,24 @@ let sketch_shader = function(p){
     
       st = rotate2D(st,dist/(mdist/5.0)*PI*2.0);
     
-      gl_FragColor = vec4(vec3(concentricCircles(st, vec2(0.0,0.0), 5.0, 5.0),concentricCircles(st, vec2(0.0,0.0), 10.0, 10.0),concentricCircles(st, vec2(0.0,0.0), 20.0, 10.0)),1.0);
+      gl_FragColor = vec4(vec3(concentricCircles(st, vec2(0.0,0.0), 3.0, 1.5),concentricCircles(st, vec2(0.0,0.0), 10.0, 6.0),concentricCircles(st, vec2(0.0,0.0), 20.0, 10.0)),1.0);
   }
   `;
   let the_shader;
   let shader_texture;
+  let c = p.color(255,255,255,0);
 
   p.setup = function(){
+    let a = p.createA('https://github.com/jakemorgan011','jake morgan - github','_blank');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     p.createCanvas(300,300,p.WEBGL);
     p.noStroke();
     p.angleMode(p.DEGREES);
     the_shader = p.createShader(vertexShader,fragmentShader);
+    a.position(87,140);
   }
   p.draw = function(){
     p.background(252,252,255);
@@ -190,10 +211,33 @@ let sketch_shader = function(p){
     p.push();
     p.rotateX(-p.mouseY);
     p.rotateY(-p.mouseX);
-    p.sphere(75);
+    p.torus(50,25);
     p.pop();
   }
 }
+
+let sketch_pulsar = function(p){
+  let pulsar_shader;
+  // figure out how to do this
+  let vertex_shader = `
+  `;
+  let fragment_shader = `
+  `;
+  let pulsar;
+  p.setup = function(){
+    pulsar_shader = createShader(vertex_shader,fagment_shader);
+    p.createCanvas(300,300,p.WEBGL);
+    p.noStroke();
+    p.angleMode(p.DEGREES);
+    let c = p.color(251,241,253);
+    /* check docs for this part this is the basics
+    pulsar = buildGeometry(() => {
+      put all the code here lol.
+    });
+     */
+  }
+}
+
 
 function calcAspect(){
 }
