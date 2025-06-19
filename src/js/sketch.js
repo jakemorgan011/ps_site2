@@ -177,7 +177,7 @@ let sketch_shader = function(p){
       float mdist= distance(vec2(1.0,1.0), mst);
     
       float dist = distance(st,vec2(sin(time/10.0),cos(time/10.0)));
-      st = tile(st,10.0);
+      st = tile(st,4.0);
     
       st = rotate2D(st,dist/(mdist/5.0)*PI*2.0);
     
@@ -203,7 +203,7 @@ let sketch_shader = function(p){
   p.draw = function(){
     p.background(252,252,255);
     the_shader.setUniform('resolution', [p.width,p.height]);
-    the_shader.setUniform('time', p.millis() / 1000.0);
+    the_shader.setUniform('time', p.millis() / 400.0);
     the_shader.setUniform('mouse', [p.mouseX,p.map(p.mouseY,0,p.height,p.height,0)]);
 
     p.shader(the_shader);
@@ -220,24 +220,105 @@ let sketch_pulsar = function(p){
   let pulsar_shader;
   // figure out how to do this
   let vertex_shader = `
+  precision highp float;
+
+  attribute vec3 aPosition;
+  attribute vec4 aVertexColor;
+  attribute vec3 aNormal;
+
+  uniform mat4 uModelViewMatrix;
+  uniform mat4 uProjectionMatrix;
+
+  varying vec4 vVertexColor;
+
+  uniform float time;
+
+  void main() {
+    vec3 position = aPosition;
+
+    // Add an offset per vertex. There will be a time delay based
+    // on the texture coordinates.
+    position.y += 20.0 * sin(time * 0.01 + position.y * 0.1);
+
+    // Apply the transformations that have been set in p5
+    vec4 viewModelPosition = uModelViewMatrix * vec4(position, 1.0);
+
+    // Tell WebGL where the vertex should be drawn
+    gl_Position = uProjectionMatrix * viewModelPosition;  
+
+    // Pass along the color of the vertex to the fragment shader
+    vVertexColor = aVertexColor;
+  }
   `;
   let fragment_shader = `
+  precision highp float;
+
+  // Receive the vertex color from the vertex shader
+  varying vec4 vVertexColor;
+
+  void main() {
+    // Color the pixel with the vertex color
+    gl_FragColor = vVertexColor;
+  }
   `;
   let pulsar;
   p.setup = function(){
-    pulsar_shader = createShader(vertex_shader,fagment_shader);
+    pulsar_shader = p.createShader(vertex_shader,fragment_shader);
     p.createCanvas(300,300,p.WEBGL);
-    p.noStroke();
     p.angleMode(p.DEGREES);
+    p.normalMaterial();
     let c = p.color(251,241,253);
-    /* check docs for this part this is the basics
-    pulsar = buildGeometry(() => {
-      put all the code here lol.
+    pulsar = p.buildGeometry(() => {
+      with(p){
+        noStroke();
+        beginShape(TRIANGLES);
+        fill(color('#55F'));
+        //
+        vertex(-50,50,50);
+        vertex(50,50,50);
+        vertex(50,50,-50);
+
+        vertex(-50,50,50);
+        vertex(50,50,-50);
+        vertex(-50,50,-50);
+
+        //
+        vertex(-50,50,50);
+        vertex(50,50,50);
+        vertex(0,-50,0);
+        //
+        vertex(50,50,50);
+        vertex(-50,50,-50);
+        vertex(0,-50,0);
+        //
+        vertex(50,50,-50);
+        vertex(-50,50,-50);
+        vertex(0,-50,0);
+        //
+        vertex(-50,50,-50);
+        vertex(-50,50,50);
+        vertex(0,-50,0);
+
+        endShape();
+      }
     });
-     */
+    pulsar.computeNormals();
+  }
+  p.draw = function(){
+    p.background(252,252,255);
+    p.shader(pulsar_shader);
+    pulsar_shader.setUniform('time', p.millis());
+    p.push();
+    p.rotateWithFrameCount(150);
+    p.model(pulsar); 
+    p.pop();
+  }
+  p.rotateWithFrameCount = function(offset){
+    p.rotateZ((p.frameCount - offset)*0.5);
+    p.rotateY((p.frameCount - offset)*0.5);
+    p.rotateX((p.frameCount - offset)*0.5);
   }
 }
-
 
 function calcAspect(){
 }
@@ -246,3 +327,4 @@ function calcAspect(){
 let horse_p5 = new p5(sketch_horse, 'canvas-container-horse');
 let cube_p5 = new p5(sketch_cube, 'canvas-container-cube');
 let shader_p5 = new p5(sketch_shader, 'canvas-container-shader');
+let pulsar_p5 = new p5(sketch_pulsar, 'canvas-container-pulsar');
