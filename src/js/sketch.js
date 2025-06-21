@@ -232,13 +232,51 @@ let sketch_pulsar = function(p){
   varying vec4 vVertexColor;
 
   uniform float time;
+  // there's definitely a better way of doing these lol.
+  uniform float BETA;
+  uniform float DELTA_TIME;
+  
+  // here is where everything can break :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  
+  vec3 calculateChaos (in vec3 current_pos){
+    vec3 new_pos = current_pos;
+    // gonna be a memory tard here and make a bunch of variable.
+    // concatinate later....
+    float xb = current_pos.x * (-BETA);
+    float yb = current_pos.y * (-BETA);
+    float zb = current_pos.z * (-BETA);
 
-  void main() {
+    float sinx = sin(current_pos.x);
+    float siny = sin(current_pos.y);
+    float sinz = sin(current_pos.z);
+    
+    float dt_x = DELTA_TIME*(xb + siny);
+    float dt_y = DELTA_TIME*(yb + sinz);
+    float dt_z = DELTA_TIME*(zb + sinx);
+    
+    new_pos.x = new_pos.x + (dt_x);
+    new_pos.y = new_pos.x + (dt_y);
+    new_pos.z = new_pos.x + (dt_z);
+    
+    return new_pos;
+  }
+
+
+  // ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  void main(void) {
     vec3 position = aPosition;
 
     // Add an offset per vertex. There will be a time delay based
     // on the texture coordinates.
-    position.y += 20.0 * sin(time * 0.01 + position.y * 0.1);
+    // OLD CODE HERE.....
+    position.y += 10.0 * sin(time * 0.01 + position.y * 0.1);
+
+
+    // TODO:::::
+    // chaos is not behaving how i expected fix later::::
+    // position = calculateChaos(position);
+    
+
 
     // Apply the transformations that have been set in p5
     vec4 viewModelPosition = uModelViewMatrix * vec4(position, 1.0);
@@ -308,6 +346,9 @@ let sketch_pulsar = function(p){
     p.background(252,252,255);
     p.shader(pulsar_shader);
     pulsar_shader.setUniform('time', p.millis());
+    // since this is called every frame i gues we can make it cool and dynamic....
+    pulsar_shader.setUniform('BETA', 0.02);
+    pulsar_shader.setUniform('DELTA_TIME',0.008);
     p.push();
     p.rotateWithFrameCount(150);
     p.model(pulsar); 
