@@ -300,12 +300,18 @@ let sketch_pulsar = function(p){
   }
   `;
   let pulsar;
+  let c = p.color(251,241,253,0);
   p.setup = function(){
+    let a = p.createA('src/gallery/gallery.html','jake morgan - gallery');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     pulsar_shader = p.createShader(vertex_shader,fragment_shader);
     p.createCanvas(300,300,p.WEBGL);
     p.angleMode(p.DEGREES);
     p.normalMaterial();
-    let c = p.color(251,241,253);
+    a.position(100,150);
     pulsar = p.buildGeometry(() => {
       with(p){
         noStroke();
