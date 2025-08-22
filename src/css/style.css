@@ -76,6 +76,9 @@ body{
     aspect-ratio:1;
     position: relative;
   }
+  a {
+    font-size: 3em;
+  }
 }
 
 /* desktops */
