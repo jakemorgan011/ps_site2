@@ -471,7 +471,7 @@ let sketch_stasis = function(p){
   };
   p.preload = function(){
     toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
-    obj = p.loadModel('src/assets/stasis.obj');
+    obj = p.loadModel('src/assets/stasis_lp.obj');
   }
   
   p.draw = function(){
