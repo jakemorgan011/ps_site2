@@ -465,7 +465,13 @@ let sketch_stasis = function(p){
   let toon_shader;
   let l_pos = [20,-2,0.2];
   p.setup = function(){
+    let a = p.createA('dimensionality.html','dimensionality.html');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
     p.createCanvas(600,600,p.WEBGL);
+    a.position(75,150);
     p.angleMode(p.DEGREES);
     p.noStroke();
   };
