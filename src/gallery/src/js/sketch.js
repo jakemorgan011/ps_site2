@@ -153,4 +153,4 @@ let pulsar_p5 = new p5(sketch_pulsar, 'canvas-container-pulsar');
 let pulsar_p52 = new p5(sketch_pulsar, 'canvas-container-pulsar2');
 let pulsar_p53 = new p5(sketch_pulsar, 'canvas-container-pulsar3');
 let pulsar_p54 = new p5(sketch_pulsar, 'canvas-container-pulsar4');
-
+let pulsar_p55 = new p5(sketch_pulsar, 'canvas-container-pulsar5');

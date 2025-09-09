@@ -66,6 +66,45 @@ body{
   border: none;
 }
 
+.sidebar{
+  width: 18%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 3px 0 15px rgba(0,0,0,0.5);
+  background-color: rgb(172,172,175);
+  padding: 10px;
+  margin-right: 25px;
+}
+.sidebar *{
+  background-color: rgb(172,172,175);
+  background: rgb(172,172,175);
+  color: white;
+}
+
+.section{
+  margin-bottom: 25px;
+}
+.section-title{
+  font-size: 16px;
+  font-weight: 600;
+}
+.controls{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+.control-btn{
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.control-btn:hover{
+}
+
+
 /**/
 
 /* phones */
@@ -107,4 +146,17 @@ body{
     max-width: 700px;
     position: relative;
   }
+  .content{
+    margin: auto;
+    display: flex;
+  }
+  .ani-bar{
+    font-size: 1.35em;
+    margin: 0;
+  }
+  button{
+    font-size: 1.36em;
+  }
 }
+
+/*for shrunken desktop display*/

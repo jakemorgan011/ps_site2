@@ -302,7 +302,7 @@ let sketch_pulsar = function(p){
   let pulsar;
   let c = p.color(251,241,253,0);
   p.setup = function(){
-    let a = p.createA('src/gallery/gallery.html','jake morgan - gallery');
+    let a = p.createA('gallery.html','jake morgan - gallery');
     a.style('background',c);
     a.style('text-decoration','line-underneath');
     a.style('color','black');
