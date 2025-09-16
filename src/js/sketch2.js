@@ -1,3 +1,5 @@
+// dimensionality page
+
 let sketch_dimensionality = function(p){
   let obj;
   let c = p.color(255,255,255,0);
