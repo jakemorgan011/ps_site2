@@ -1,5 +1,6 @@
 // dimensionality page
-
+// okay i tried to just vibe code the whole thing and it nuked the project.
+// so figure out from the scraps how it works :3
 let sketch_dimensionality = function(p){
   let obj;
   let c = p.color(255,255,255,0);
@@ -9,17 +10,18 @@ let sketch_dimensionality = function(p){
     p.createCanvas(600,600,p.WEBGL);
     p.angleMode(p.DEGREES);
     p.noStroke();
+    p.normalMaterial();
   };
   p.preload = function(){
-    toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
+    //toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
     obj = p.loadModel('src/assets/stasis.obj');
   }
   
   p.draw = function(){
-    p.shader(toon_shader);
+    //p.shader(toon_shader);
     l_pos[0] = 200 * p.sin(p.millis() / 10000);
 
-    toon_shader.setUniform('uLightPosition',l_pos);
+    //toon_shader.setUniform('uLightPosition',l_pos);
     
     p.background(252,252,255);
     p.push();
