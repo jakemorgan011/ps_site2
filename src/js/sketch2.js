@@ -1,40 +1,105 @@
-// dimensionality page
+// dimensionality page with dynamic OBJ loading
 
 let sketch_dimensionality = function(p){
-  let obj;
-  let c = p.color(255,255,255,0);
-  let toon_shader;
-  let l_pos = [20,-2,0.2];
+  let obj = null;
+  let uploadedObj = null;
+  let objScale = 70.0;
+  
   p.setup = function(){
-    p.createCanvas(600,600,p.WEBGL);
+    p.createCanvas(600, 600, p.WEBGL);
     p.angleMode(p.DEGREES);
-    p.noStroke();
+    
+    // Try to load default model
+    try {
+      p.loadModel('src/assets/stasis.obj', 
+        (model) => {
+          obj = model;
+          console.log('Default model loaded');
+        },
+        true,
+        () => {
+          console.log('Default model not found, that\'s okay');
+        }
+      );
+    } catch(e) {
+      console.log('Could not load default model');
+    }
+    
+    // Listen for OBJ file uploads
+    if (document.getElementById('obj-input')) {
+      document.getElementById('obj-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file && file.name && file.name.toLowerCase().endsWith('.obj')) {
+          const reader = new FileReader();
+          
+          reader.onload = function(event) {
+            // Parse OBJ text directly to avoid p5.js loader issues
+            const objText = event.target.result;
+            
+            // Create blob URL for p5.js to load
+            const blob = new Blob([objText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            p.loadModel(url, 
+              (model) => {
+                uploadedObj = model;
+                URL.revokeObjectURL(url);
+                console.log('Uploaded model loaded');
+                
+                // Update status
+                if (document.getElementById('status-text')) {
+                  document.getElementById('status-text').textContent = 'Model loaded!';
+                }
+              },
+              true, // normalize
+              (err) => {
+                console.error('Error loading uploaded model');
+                URL.revokeObjectURL(url);
+              }
+            );
+          };
+          
+          reader.readAsText(file);
+        }
+      });
+    }
   };
-  p.preload = function(){
-    toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
-    obj = p.loadModel('src/assets/stasis.obj');
-  }
   
   p.draw = function(){
-    p.shader(toon_shader);
-    l_pos[0] = 200 * p.sin(p.millis() / 10000);
-
-    toon_shader.setUniform('uLightPosition',l_pos);
+    p.background(252, 252, 255);
     
-    p.background(252,252,255);
+    // Simple lighting setup
+    p.lights();
+    p.ambientLight(50);
+    p.directionalLight(255, 255, 255, 0, 0, -1);
+    
     p.push();
-    p.translate(0,0,0);
-    p.rotateWithFrameCount(0);
-    p.rotateZ(180);
-    p.scale(70.0); // change this to scale with screen size for proper displays.
-    p.model(obj);
+    
+    // Animation
+    p.rotateX(p.frameCount * 0.3);
+    p.rotateY(p.frameCount * 0.02);
+    p.rotateZ(180 + p.frameCount * 0.06);
+    
+    // Material
+    p.normalMaterial();
+    p.noStroke();
+    
+    // Scale
+    p.scale(objScale);
+    
+    // Display model in priority order
+    if (uploadedObj) {
+      p.model(uploadedObj);
+    } else if (obj) {
+      p.model(obj);
+    } else {
+      // Fallback geometry if no models loaded
+      p.box(1);
+    }
+    
     p.pop();
-  }
-  p.rotateWithFrameCount = function(offset){
-    p.rotateZ((p.frameCount - offset)*0.06);
-    p.rotateY((p.frameCount - offset)*0.02);
-    p.rotateX((p.frameCount - offset)*0.3);
-  }
-}
+  };
+};
 
+// Initialize the sketch
 let dimensionality_p5 = new p5(sketch_dimensionality, 'canvas-container-dimensionality');
