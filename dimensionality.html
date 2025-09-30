@@ -91,7 +91,7 @@
             });
             
             const stats = {
-                // Percentile-based features
+                // these stats are lame af need to change these.
                 x10: byX[Math.floor(vertices.length * 0.1)].x,
                 x50: byX[Math.floor(vertices.length * 0.5)].x,
                 x90: byX[Math.floor(vertices.length * 0.9)].x,
@@ -116,7 +116,7 @@
                     byDistance[vertices.length - 1].z**2
                 ),
                 
-                // Variance and spread
+                // spread is cool
                 xSpread: byX[byX.length - 1].x - byX[0].x,
                 ySpread: byY[byY.length - 1].y - byY[0].y,
                 zSpread: byZ[byZ.length - 1].z - byZ[0].z,
@@ -157,16 +157,16 @@
             };
             
             return {
-                // Reverb parameters
+                // Reverb
                 reverbSize: normalize(stats.medianDist, 0, 10),
                 reverbDamping: normalize(stats.variance, 0, 5),
                 reverbWetness: normalize(stats.ySpread, 0, 5) * 0.5,
                 
-                // Delay parameters
+                // Delay
                 delayTime: normalize(stats.zSpread, 0, 5) * 0.5, // 0-500ms
                 delayFeedback: normalize(Math.abs(stats.centerZ), 0, 3) * 0.7,
                 
-                // Filter parameters
+                // Filter
                 filterFreq: 200 + normalize(stats.y90, -5, 5) * 3800, // 200-4000 Hz
                 filterQ: 1 + normalize(stats.xSpread, 0, 5) * 10,
                 
@@ -179,6 +179,8 @@
                 // Modulation
                 chorusDepth: normalize(stats.x90 - stats.x10, 0, 5),
                 chorusRate: 0.5 + normalize(stats.minDist, 0, 2) * 4
+
+                // add spectral mashing
             };
         }
     }
