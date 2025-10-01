@@ -474,18 +474,18 @@ let sketch_stasis = function(p){
     a.position(75,150);
     p.angleMode(p.DEGREES);
     p.noStroke();
-    p.normalMaterial();
+    //p.normalMaterial();
   };
   p.preload = function(){
-    //toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
+    toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
     obj = p.loadModel('src/assets/stasis_lp.obj');
   }
   
   p.draw = function(){
-    //p.shader(toon_shader);
+    p.shader(toon_shader);
     l_pos[0] = 200 * p.sin(p.millis() / 10000);
 
-    //toon_shader.setUniform('uLightPosition',l_pos);
+    toon_shader.setUniform('uLightPosition',l_pos);
     
     p.background(252,252,255);
     p.push();

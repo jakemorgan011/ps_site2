@@ -10,11 +10,6 @@ uniform vec3 uLightPosition;
 varying float vLightIntensity;
 
 // so i think technically i need to create a matrix to *twist* the vertex positions.
-mat4 calculate_twist(){
-  mat4 output;
-  return output;
-}
-
 
 // i made deepseek clean my code cause i hate my stupid chud life.
 void main() {
