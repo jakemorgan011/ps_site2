@@ -55,7 +55,6 @@
     <script src="src/js/p_animate.js"></script>
     
     <script>
-    // OBJ Parser
     class OBJParser {
         static parse(text) {
             const vertices = [];
@@ -80,7 +79,6 @@
         static calculate(vertices) {
             if (vertices.length === 0) return null;
             
-            // Sort vertices by different criteria
             const byX = [...vertices].sort((a, b) => a.x - b.x);
             const byY = [...vertices].sort((a, b) => a.y - b.y);
             const byZ = [...vertices].sort((a, b) => a.z - b.z);
@@ -121,12 +119,10 @@
                 ySpread: byY[byY.length - 1].y - byY[0].y,
                 zSpread: byZ[byZ.length - 1].z - byZ[0].z,
                 
-                // Centroid
                 centerX: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
                 centerY: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length,
                 centerZ: vertices.reduce((sum, v) => sum + v.z, 0) / vertices.length,
                 
-                // Variance
                 variance: this.calculateVariance(vertices)
             };
             
@@ -151,40 +147,70 @@
         }
         
         static mapToAudioParams(stats) {
-            // Normalize and map statistics to audio parameters
             const normalize = (value, min, max) => {
                 return Math.max(0, Math.min(1, (value - min) / (max - min)));
             };
             
             return {
-                // Reverb
                 reverbSize: normalize(stats.medianDist, 0, 10),
                 reverbDamping: normalize(stats.variance, 0, 5),
                 reverbWetness: normalize(stats.ySpread, 0, 5) * 0.5,
                 
-                // Delay
                 delayTime: normalize(stats.zSpread, 0, 5) * 0.5, // 0-500ms
                 delayFeedback: normalize(Math.abs(stats.centerZ), 0, 3) * 0.7,
                 
-                // Filter
                 filterFreq: 200 + normalize(stats.y90, -5, 5) * 3800, // 200-4000 Hz
                 filterQ: 1 + normalize(stats.xSpread, 0, 5) * 10,
                 
-                // Distortion
                 distortionAmount: normalize(stats.variance, 0, 10) * 50,
                 
-                // Spatial
                 pan: Math.max(-1, Math.min(1, stats.centerX / 5)),
                 
-                // Modulation
                 chorusDepth: normalize(stats.x90 - stats.x10, 0, 5),
                 chorusRate: 0.5 + normalize(stats.minDist, 0, 2) * 4
 
-                // add spectral mashing
             };
         }
     }
     
+    // import { FFT } from 'src/lib/dsp.js';
+
+    async function spectral_mash(inputBuffer, meshStats){
+      const sampleRate = inputBuffer.sampleRate;
+      const input = inputBuffer.getChannelData(0);
+      const output = new Float32Array(input.length);
+
+      const fftSize = 4096;
+      const fft = new FFT(fftSize, sampleRate);
+
+      for (let i = 0; i < input.length - fftSize; i += fftSize/2){
+        // i forgot slice existed.
+        const chunk = input.slice(i,i + fftSize);
+
+        fft.forward(chunk);
+
+        const real = fft.real;
+        const imag = fft.imag;
+        // mesh calc
+        // the actuall PROCESSING HAPPENS HERE. PUT ALL YOUR SPECTRAL DSP IN HERE.
+        // i literally know ZERO spectral dsp other than vocoding and de-harm
+        // i guess i'll just make stuff up then.
+        for (let bin = 0; bin < real.length; bin++){
+          const freq = bin * sampleRate / fftSize;
+          const gain = 1 + meshStats.variance * (freq / 1000);
+        }
+
+        const processed = fft.inverse(real,imag);
+
+        for(let j = 0; j < processed.length; j++){
+          if (i + j < output.length){
+            output[i + j] += processed[j] * 0.5;
+          }
+        }
+      }
+      return output;
+    }
+
     class AudioProcessor {
         constructor() {
             this.audioContext = null;
@@ -215,7 +241,6 @@
                 this.sourceBuffer.sampleRate
             );
             
-            // Create source
             const source = offlineContext.createBufferSource();
             source.buffer = this.sourceBuffer;
             
@@ -271,16 +296,14 @@
             const panner = offlineContext.createStereoPanner();
             panner.pan.value = params.pan;
             
-            // Connect everything to panner then output
             dryGain.connect(panner);
             delayWet.connect(panner);
             reverbWet.connect(panner);
             panner.connect(offlineContext.destination);
             
-            // Start processing
+          // okay i think offlineAudioContext works right here ish. idk confusing.
             source.start(0);
             
-            // Render
             this.processedBuffer = await offlineContext.startRendering();
             return this.processedBuffer;
         }
@@ -401,19 +424,18 @@
         }
     }
     
-    // UI Controller
+    // ui control
     const audioProcessor = new AudioProcessor();
     let meshFingerprint = null;
     let audioParams = null;
     
-    // Initialize audio context on user interaction
+    // start processing when interact`
     document.addEventListener('click', () => {
         if (!audioProcessor.audioContext) {
             audioProcessor.init();
         }
     }, { once: true });
     
-    // OBJ file handler
     document.getElementById('obj-input').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -422,11 +444,9 @@
             
             document.getElementById('status-text').textContent = `Loaded ${vertices.length} vertices`;
             
-            // Calculate fingerprint
             meshFingerprint = MeshFingerprint.calculate(vertices);
             audioParams = MeshFingerprint.mapToAudioParams(meshFingerprint);
             
-            // Display parameters
             const paramsDisplay = document.getElementById('params-display');
             const paramsList = document.getElementById('params-list');
             paramsDisplay.style.display = 'block';
@@ -435,14 +455,12 @@
                 .map(([key, value]) => `<p>${key}: ${value.toFixed(3)}</p>`)
                 .join('');
             
-            // Enable process button if audio is loaded
             if (audioProcessor.sourceBuffer) {
                 document.getElementById('process-btn').disabled = false;
             }
         }
     });
     
-    // WAV file handler
     document.getElementById('wav-input').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -451,14 +469,12 @@
             
             document.getElementById('status-text').textContent = 'Audio loaded';
             
-            // Enable process button if mesh is loaded
             if (audioParams) {
                 document.getElementById('process-btn').disabled = false;
             }
         }
     });
     
-    // Process button
     document.getElementById('process-btn').addEventListener('click', async () => {
         if (audioParams && audioProcessor.sourceBuffer) {
             document.getElementById('status-text').textContent = 'Processing...';
@@ -475,7 +491,6 @@
         }
     });
     
-    // Playback controls
     document.getElementById('play-btn').addEventListener('click', () => {
         audioProcessor.play();
         document.getElementById('stop-btn').disabled = false;
@@ -486,7 +501,6 @@
         document.getElementById('stop-btn').disabled = true;
     });
     
-    // Download button
     document.getElementById('download-btn').addEventListener('click', () => {
         audioProcessor.downloadProcessedAudio('dimensionality-processed.wav');
     });
