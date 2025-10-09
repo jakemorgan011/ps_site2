@@ -1,5 +1,3 @@
-// dimensionality page - simplified without p5 model loader
-
 let sketch_dimensionality = function(p){
   let vertices = [];
   let rotX = 0, rotY = 0, rotZ = 0;
@@ -13,14 +11,12 @@ let sketch_dimensionality = function(p){
   p.draw = function(){
     p.background(252, 252, 255);
     
-    // Lighting
     p.ambientLight(100);
     p.directionalLight(255, 255, 255, 0, 0, -1);
     p.pointLight(255, 255, 255, 100, -100, 100);
     
     p.push();
     
-    // Animation
     rotX += 0.3;
     rotY += 0.02;
     rotZ += 0.06;
@@ -32,11 +28,10 @@ let sketch_dimensionality = function(p){
     p.normalMaterial();
     p.noStroke();
     
-    // If we have vertices, draw them as points or a simple mesh
     if (vertices.length > 0) {
-      p.scale(200); // Scale to visible size
+      p.scale(200);
       
-      // Draw vertices as a point cloud
+      // point cloud on load
       p.strokeWeight(2);
       p.stroke(255, 100, 100);
       p.beginShape(p.POINTS);
@@ -46,17 +41,16 @@ let sketch_dimensionality = function(p){
       p.endShape();
       
     } else {
-      // Default cube
+      // cube when no obj loaded.
       p.scale(70);
       p.box(1);
-    }
-    
+    } 
     p.pop();
   };
-  
-  // Update vertices from external source
+ 
+  // load from external
   p.updateVertices = function(newVertices) {
-    // Normalize vertices to fit in -1 to 1 range
+
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
@@ -79,7 +73,6 @@ let sketch_dimensionality = function(p){
     const centerY = (minY + maxY) / 2;
     const centerZ = (minZ + maxZ) / 2;
     
-    // Normalize vertices
     vertices = newVertices.map(v => ({
       x: (v.x - centerX) / maxScale,
       y: (v.y - centerY) / maxScale,
@@ -90,12 +83,9 @@ let sketch_dimensionality = function(p){
   };
 };
 
-// Initialize sketch
 let dimensionality_p5 = new p5(sketch_dimensionality, 'canvas-container-dimensionality');
 
-// Simple OBJ parser integrated with the existing one
 document.addEventListener('DOMContentLoaded', () => {
-  // Hook into the existing OBJ parser
   const originalObjHandler = document.getElementById('obj-input').onchange;
   
   document.getElementById('obj-input').addEventListener('change', async (e) => {
@@ -104,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const text = await file.text();
         
-        // Parse vertices
         const vertices = [];
         const lines = text.split('\n');
         
@@ -119,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        // Update the sketch with vertices
         if (dimensionality_p5 && vertices.length > 0) {
           dimensionality_p5.updateVertices(vertices);
         }
