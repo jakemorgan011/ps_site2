@@ -478,12 +478,15 @@ let sketch_stasis = function(p){
   };
   p.preload = function(){
     toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
-    obj = p.loadModel('src/assets/stasis_lp.obj');
+    obj = p.loadModel('src/assets/spiky.obj');
   }
   
   p.draw = function(){
     p.shader(toon_shader);
-    l_pos[0] = 200 * p.sin(p.millis() / 10000);
+    l_pos[0] = 100;
+    //l_pos[0] = 2000 * p.sin(p.millis() / 10000);
+    l_pos[2] = 5000;
+    l_pos[1] = 200;
 
     toon_shader.setUniform('uLightPosition',l_pos);
     
@@ -492,7 +495,7 @@ let sketch_stasis = function(p){
     p.translate(0,0,0);
     p.rotateWithFrameCount(0);
     p.rotateZ(180);
-    p.scale(70.0); // change this to scale with screen size for proper displays.
+    p.scale(90.0); // change this to scale with screen size for proper displays.
     p.model(obj);
     p.pop();
   }
