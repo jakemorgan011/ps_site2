@@ -5,6 +5,8 @@
     <title>horse.beer/dimensionality</title>
     <link rel="stylesheet" href="src/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <!-- not sure how i feel about this -->
+    <script src="src/lib/dsp.js"></script>
 </head>
 <body>
     <h1><a href="index.html">horse.beer</a>/dimensionality</h1>
@@ -166,14 +168,15 @@
                 pan: Math.max(-1, Math.min(1, stats.centerX / 5)),
                 
                 chorusDepth: normalize(stats.x90 - stats.x10, 0, 5),
-                chorusRate: 0.5 + normalize(stats.minDist, 0, 2) * 4
+                chorusRate: 0.5 + normalize(stats.minDist, 0, 2) * 4,
+
+                // add spectral_mash
+                spectral_mash: normalize(stats.variance, 0, 10)
 
             };
         }
     }
     
-    // import { FFT } from 'src/lib/dsp.js';
-
     async function spectral_mash(inputBuffer, meshStats){
       const sampleRate = inputBuffer.sampleRate;
       const input = inputBuffer.getChannelData(0);
@@ -197,6 +200,8 @@
         for (let bin = 0; bin < real.length; bin++){
           const freq = bin * sampleRate / fftSize;
           const gain = 1 + meshStats.variance * (freq / 1000);
+          real[bin] *= gain;
+          imag[bin] *= gain;
         }
 
         const processed = fft.inverse(real,imag);
@@ -233,6 +238,17 @@
             if (!this.sourceBuffer) {
                 throw new Error('No audio loaded');
             }
+
+            let processedBuffer = this.sourceBuffer;
+            if(params.spectral_mash > 0){
+              const spectralData = await spectral_mash(this.sourceBuffer, params);
+              
+              processedBuffer = this.audioContext.createBuffer(1,
+              spectralData.length,
+              this.sourceBuffer.sampleRate
+              );
+              processedBuffer.copyToChannel(spectralData,0);
+            }
             
             const offlineContext = new OfflineAudioContext(
                 this.sourceBuffer.numberOfChannels,
@@ -241,7 +257,9 @@
             );
             
             const source = offlineContext.createBufferSource();
-            source.buffer = this.sourceBuffer;
+            // changed to processed buffer. used to be this.sourceBuffer.
+            // just remember for if you ever you offlie audio context ever again.
+            source.buffer = processedBuffer;
             
             let currentNode = source;
             
@@ -299,7 +317,7 @@
             delayWet.connect(panner);
             reverbWet.connect(panner);
             panner.connect(offlineContext.destination);
-            
+
           // okay i think offlineAudioContext works right here ish. idk confusing.
             source.start(0);
             
@@ -442,7 +460,16 @@
             const vertices = OBJParser.parse(text);
             
             document.getElementById('status-text').textContent = `Loaded ${vertices.length} vertices`;
-            
+
+            // here here here
+            // TODO: uhhhh
+            // lowkey this solution is kinda stupid because 
+            // its like creating a audioParams object just for display???
+            // i'm kinda addicted to vibe coding but whateva :3
+            // there should be an object that contains the normalized values but also the display text.
+            // i'll fix that later when i document all this.
+            // like its pissing me off that i create meshFingerprint then pass it to audio params
+            // thats an unecessary amount of memory usage.
             meshFingerprint = MeshFingerprint.calculate(vertices);
             audioParams = MeshFingerprint.mapToAudioParams(meshFingerprint);
             
