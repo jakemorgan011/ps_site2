@@ -30,13 +30,14 @@ let sketch_dimensionality = function(p){
     
     if (vertices.length > 0) {
       p.scale(200);
+      const factor = 2.875;
       
       // point cloud on load
       p.strokeWeight(2);
       p.stroke(255, 100, 100);
       p.beginShape(p.POINTS);
       for (let v of vertices) {
-        p.vertex(v.x, v.y, v.z);
+        p.vertex(v.x * factor, v.y * factor, v.z * factor);
       }
       p.endShape();
       
@@ -67,7 +68,7 @@ let sketch_dimensionality = function(p){
     const scaleX = maxX - minX || 1;
     const scaleY = maxY - minY || 1;
     const scaleZ = maxZ - minZ || 1;
-    const maxScale = Math.max(scaleX, scaleY, scaleZ);
+    const maxScale = Math.max(scaleX, scaleY, scaleZ) * 2;
     
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
