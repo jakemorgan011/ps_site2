@@ -5,7 +5,6 @@
     <title>horse.beer/dimensionality</title>
     <link rel="stylesheet" href="src/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-    <!-- not sure how i feel about this -->
     <script src="src/lib/dsp.js"></script>
 </head>
 <body>
@@ -115,7 +114,6 @@
                     byDistance[vertices.length - 1].z**2
                 ),
                 
-                // spread is cool
                 xSpread: byX[byX.length - 1].x - byX[0].x,
                 ySpread: byY[byY.length - 1].y - byY[0].y,
                 zSpread: byZ[byZ.length - 1].z - byZ[0].z,
@@ -157,10 +155,10 @@
                 reverbDamping: normalize(stats.variance, 0, 5),
                 reverbWetness: normalize(stats.ySpread, 0, 5) * 0.5,
                 
-                delayTime: normalize(stats.zSpread, 0, 5) * 0.5, // 0-500ms
+                delayTime: normalize(stats.zSpread, 0, 5) * 0.5,
                 delayFeedback: normalize(Math.abs(stats.centerZ), 0, 3) * 0.7,
                 
-                filterFreq: 200 + normalize(stats.y90, -5, 5) * 3800, // 200-4000 Hz
+                filterFreq: 200 + normalize(stats.y90, -5, 5) * 3800,
                 filterQ: 1 + normalize(stats.xSpread, 0, 5) * 10,
                 
                 distortionAmount: normalize(stats.variance, 0, 10) * 50,
@@ -169,50 +167,56 @@
                 
                 chorusDepth: normalize(stats.x90 - stats.x10, 0, 5),
                 chorusRate: 0.5 + normalize(stats.minDist, 0, 2) * 4,
-
-                // add spectral_mash
+                
                 spectral_mash: normalize(stats.variance, 0, 10)
-
             };
         }
     }
     
-    async function spectral_mash(inputBuffer, meshStats){
-      const sampleRate = inputBuffer.sampleRate;
-      const input = inputBuffer.getChannelData(0);
-      const output = new Float32Array(input.length);
-
-      const fftSize = 4096;
-      const fft = new FFT(fftSize, sampleRate);
-
-      for (let i = 0; i < input.length - fftSize; i += fftSize/2){
-        // i forgot slice existed.
-        const chunk = input.slice(i,i + fftSize);
-
-        fft.forward(chunk);
-
-        const real = fft.real;
-        const imag = fft.imag;
-        // mesh calc
-        // the actuall PROCESSING HAPPENS HERE. PUT ALL YOUR SPECTRAL DSP IN HERE.
-        // i literally know ZERO spectral dsp other than vocoding and de-harm
-        // i guess i'll just make stuff up then.
-        for (let bin = 0; bin < real.length; bin++){
-          const freq = bin * sampleRate / fftSize;
-          const gain = 1 + meshStats.variance * (freq / 1000);
-          real[bin] *= gain;
-          imag[bin] *= gain;
+    async function spectral_mash(inputBuffer, meshStats) {
+        const sampleRate = inputBuffer.sampleRate;
+        const numChannels = inputBuffer.numberOfChannels;
+        const outputLength = inputBuffer.length;
+        
+        const outputChannels = [];
+        for (let ch = 0; ch < numChannels; ch++) {
+            outputChannels[ch] = new Float32Array(outputLength);
         }
-
-        const processed = fft.inverse(real,imag);
-
-        for(let j = 0; j < processed.length; j++){
-          if (i + j < output.length){
-            output[i + j] += processed[j] * 0.5;
-          }
+        
+        const fftSize = 4096;
+        const hopSize = fftSize / 2;
+        
+        for (let ch = 0; ch < numChannels; ch++) {
+            const input = inputBuffer.getChannelData(ch);
+            const output = outputChannels[ch];
+            const fft = new FFT(fftSize, sampleRate);
+            
+            for (let i = 0; i < input.length - fftSize; i += hopSize) {
+                const chunk = input.slice(i, i + fftSize);
+                
+                fft.forward(chunk);
+                
+                const real = fft.real;
+                const imag = fft.imag;
+                
+                for (let bin = 0; bin < real.length; bin++) {
+                    const freq = bin * sampleRate / fftSize;
+                    const gain = 1 + meshStats.variance * (freq / 1000);
+                    real[bin] *= gain;
+                    imag[bin] *= gain;
+                }
+                
+                const processed = fft.inverse(real, imag);
+                
+                for (let j = 0; j < processed.length; j++) {
+                    if (i + j < output.length) {
+                        output[i + j] += processed[j] * 0.5;
+                    }
+                }
+            }
         }
-      }
-      return output;
+        
+        return outputChannels;
     }
 
     class AudioProcessor {
@@ -240,15 +244,27 @@
             }
 
             let processedBuffer = this.sourceBuffer;
-            if(params.spectral_mash > 0){
-              const spectralData = await spectral_mash(this.sourceBuffer, params);
-              
-              processedBuffer = this.audioContext.createBuffer(1,
-              spectralData.length,
-              this.sourceBuffer.sampleRate
-              );
-              processedBuffer.copyToChannel(spectralData,0);
+            
+            if (params.spectral_mash > 0) {
+                const spectralChannels = await spectral_mash(this.sourceBuffer, params);
+                
+                processedBuffer = this.audioContext.createBuffer(
+                    spectralChannels.length,
+                    spectralChannels[0].length,
+                    this.sourceBuffer.sampleRate
+                );
+                
+                for (let ch = 0; ch < spectralChannels.length; ch++) {
+                    processedBuffer.copyToChannel(spectralChannels[ch], ch);
+                }
             }
+            /*
+            const offlineContext = new OfflineAudioContext(
+                processedBuffer.numberOfChannels,
+                processedBuffer.length,
+                processedBuffer.sampleRate
+            );
+            */
             
             const offlineContext = new OfflineAudioContext(
                 this.sourceBuffer.numberOfChannels,
@@ -257,9 +273,8 @@
             );
             
             const source = offlineContext.createBufferSource();
-            // changed to processed buffer. used to be this.sourceBuffer.
-            // just remember for if you ever you offlie audio context ever again.
-            source.buffer = processedBuffer;
+            source.buffer = this.sourceBuffer;
+            //source.buffer = processedBuffer;
             
             let currentNode = source;
             
@@ -318,7 +333,6 @@
             reverbWet.connect(panner);
             panner.connect(offlineContext.destination);
 
-          // okay i think offlineAudioContext works right here ish. idk confusing.
             source.start(0);
             
             this.processedBuffer = await offlineContext.startRendering();
@@ -391,7 +405,7 @@
         audioBufferToWav(buffer) {
             const numChannels = buffer.numberOfChannels;
             const sampleRate = buffer.sampleRate;
-            const format = 1; // PCM
+            const format = 1;
             const bitDepth = 16;
             
             const bytesPerSample = bitDepth / 8;
@@ -406,7 +420,6 @@
             const arrayBuffer = new ArrayBuffer(44 + length * blockAlign);
             const view = new DataView(arrayBuffer);
             
-            // WAV header
             const writeString = (offset, string) => {
                 for (let i = 0; i < string.length; i++) {
                     view.setUint8(offset + i, string.charCodeAt(i));
@@ -427,7 +440,6 @@
             writeString(36, 'data');
             view.setUint32(40, length * blockAlign, true);
             
-            // Convert float samples to PCM
             let offset = 44;
             for (let i = 0; i < length; i++) {
                 for (let channel = 0; channel < numChannels; channel++) {
@@ -441,12 +453,10 @@
         }
     }
     
-    // ui control
     const audioProcessor = new AudioProcessor();
     let meshFingerprint = null;
     let audioParams = null;
     
-    // start processing when interact`
     document.addEventListener('click', () => {
         if (!audioProcessor.audioContext) {
             audioProcessor.init();
@@ -460,16 +470,7 @@
             const vertices = OBJParser.parse(text);
             
             document.getElementById('status-text').textContent = `Loaded ${vertices.length} vertices`;
-
-            // here here here
-            // TODO: uhhhh
-            // lowkey this solution is kinda stupid because 
-            // its like creating a audioParams object just for display???
-            // i'm kinda addicted to vibe coding but whateva :3
-            // there should be an object that contains the normalized values but also the display text.
-            // i'll fix that later when i document all this.
-            // like its pissing me off that i create meshFingerprint then pass it to audio params
-            // thats an unecessary amount of memory usage.
+            
             meshFingerprint = MeshFingerprint.calculate(vertices);
             audioParams = MeshFingerprint.mapToAudioParams(meshFingerprint);
             
