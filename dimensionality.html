@@ -87,7 +87,7 @@
             const xSpread = byX[byX.length - 1].x - byX[0].x;
             const ySpread = byY[byY.length - 1].y - byY[0].y;
             const zSpread = byZ[byZ.length - 1].z - byZ[0].z;
-            const volume = xSpread * ySpread * zSpread;
+            const volume = Math.abs(xSpread * ySpread * zSpread);
             
             const centerX = vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length;
             const centerY = vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length;
@@ -100,11 +100,18 @@
                     Math.pow(v.z - centerZ, 2);
             }, 0) / vertices.length;
             
-            // Calculate Y percentiles for spectral destruction zones
-            const yPercentiles = [];
+            // Y-axis profile for spectral curve
+            const yProfile = [];
+            for (let i = 0; i <= 20; i++) {
+                const idx = Math.floor((i / 20) * (byY.length - 1));
+                yProfile.push(byY[idx].y);
+            }
+            
+            // Z-axis profile for phase manipulation
+            const zProfile = [];
             for (let i = 0; i <= 10; i++) {
-                const idx = Math.floor((i / 10) * (byY.length - 1));
-                yPercentiles.push(byY[idx].y);
+                const idx = Math.floor((i / 10) * (byZ.length - 1));
+                zProfile.push(byZ[idx].z);
             }
             
             const stats = {
@@ -112,11 +119,13 @@
                 xSpread: xSpread,
                 ySpread: ySpread,
                 zSpread: zSpread,
+                centerX: centerX,
                 centerY: centerY,
                 centerZ: centerZ,
                 variance: variance,
-                yPercentiles: yPercentiles,
-                surfaceComplexity: Math.sqrt(variance / (Math.abs(volume) || 1))
+                yProfile: yProfile,
+                zProfile: zProfile,
+                surfaceComplexity: Math.sqrt(variance / (volume || 1))
             };
             
             return stats;
@@ -128,40 +137,38 @@
             };
             
             return {
-                // CONTROLLED SPECTRAL PROCESSING
-                spectralFreeze: normalize(stats.variance, 0, 10) * 0.4,
-                spectralShift: (normalize(stats.centerY, -5, 5) - 0.5) * 0.8,
-                spectralCrush: stats.yPercentiles,
+                // SPECTRAL PARAMETERS
+                // Y-axis creates frequency shaping curve
+                spectralCurve: stats.yProfile,
                 
-                // MODERATE CHORUS - 2 voices
-                chorusDepth: 0.008 + normalize(stats.xSpread, 0, 10) * 0.022,
-                chorusRate: 0.5 + normalize(stats.surfaceComplexity, 0, 3) * 2.5,
-                chorusFeedback: normalize(stats.zSpread, 0, 10) * 0.3,
+                // X-axis controls spectral spread/width
+                spectralSpread: normalize(stats.xSpread, 0, 10) * 0.7,
+                spectralShift: (normalize(stats.centerX, -5, 5) - 0.5) * 1.5,
                 
-                // NOTICEABLE FLANGING
-                flangeDepth: 0.002 + normalize(stats.centerZ + 5, 0, 10) * 0.006,
-                flangeRate: 0.2 + normalize(stats.surfaceComplexity, 0, 3) * 1.3,
-                flangeFeedback: 0.3 + normalize(stats.variance, 0, 10) * 0.3,
-                flangeResonance: 3 + normalize(stats.ySpread, 0, 10) * 7,
+                // Z-axis controls phase and time smearing
+                phaseScramble: normalize(Math.abs(stats.centerZ), 0, 5) * 0.6,
+                spectralSmear: normalize(stats.zSpread, 0, 10) * 0.5,
                 
-                // BIG REVERB (but not drowning)
-                reverbSize: 1.5 + Math.cbrt(Math.abs(stats.volume)) * 3,
-                reverbDecay: 0.5 + normalize(Math.abs(stats.volume), 0, 100) * 0.3,
+                // Variance controls frequency blurring
+                spectralBlur: normalize(stats.variance, 0, 10) * 0.4,
+                
+                // Surface complexity controls bin manipulation
+                binSkip: Math.floor(normalize(stats.surfaceComplexity, 0, 3) * 5),
+                
+                // Volume controls overall spectral density
+                spectralDensity: normalize(stats.volume, 0, 100),
+                
+                // REVERB
+                reverbSize: 1.5 + Math.cbrt(stats.volume) * 2.5,
+                reverbDecay: 0.5 + normalize(stats.volume, 0, 100) * 0.3,
                 reverbDiffusion: normalize(stats.surfaceComplexity, 0, 2),
-                reverbMix: 0.25 + normalize(Math.abs(stats.volume), 0, 50) * 0.35,
-                
-                // Keep distortion as-is
-                distortionAmount: normalize(stats.variance, 0, 10) * 50,
-                
-                // Delay for depth
-                delayTime: 0.08 + normalize(stats.zSpread, 0, 10) * 0.22,
-                delayFeedback: 0.2 + normalize(Math.abs(stats.centerZ), 0, 5) * 0.35
+                reverbMix: 0.3 + normalize(stats.volume, 0, 50) * 0.3
             };
         }
     }
     
-    // AGGRESSIVE SPECTRAL DESTRUCTION
-    async function spectralDestroy(inputBuffer, params) {
+    // PURE SPECTRAL PROCESSING
+    async function spectralTransform(inputBuffer, params) {
         const sampleRate = inputBuffer.sampleRate;
         const numChannels = inputBuffer.numberOfChannels;
         const outputLength = inputBuffer.length;
@@ -179,11 +186,12 @@
             const output = outputChannels[ch];
             const fft = new FFT(fftSize, sampleRate);
             
-            let frozenMagnitudes = null;
+            let prevMagnitudes = null;
             
             for (let i = 0; i < input.length - fftSize; i += hopSize) {
                 const chunk = input.slice(i, i + fftSize);
                 
+                // Hann window
                 const windowed = new Float32Array(fftSize);
                 for (let j = 0; j < fftSize; j++) {
                     const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * j / fftSize);
@@ -197,24 +205,39 @@
                 const magnitudes = new Float32Array(real.length);
                 const phases = new Float32Array(real.length);
                 
+                // Convert to polar
                 for (let bin = 0; bin < real.length; bin++) {
                     magnitudes[bin] = Math.sqrt(real[bin]**2 + imag[bin]**2);
                     phases[bin] = Math.atan2(imag[bin], real[bin]);
                 }
                 
-                // SPECTRAL FREEZING - hold onto spectral content
-                if (!frozenMagnitudes || Math.random() > params.spectralFreeze) {
-                    frozenMagnitudes = new Float32Array(magnitudes);
+                // 1. SPECTRAL CURVE - Y-axis profile shapes frequency response
+                const numBins = magnitudes.length;
+                for (let bin = 0; bin < numBins; bin++) {
+                    const curveIdx = Math.floor((bin / numBins) * (params.spectralCurve.length - 1));
+                    const normalizedY = (params.spectralCurve[curveIdx] + 5) / 10; // normalize to 0-1
+                    const gain = 0.2 + normalizedY * 1.5;
+                    magnitudes[bin] *= gain;
                 }
                 
-                // Blend frozen with current
-                for (let bin = 0; bin < magnitudes.length; bin++) {
-                    magnitudes[bin] = magnitudes[bin] * (1 - params.spectralFreeze) + 
-                                     frozenMagnitudes[bin] * params.spectralFreeze;
+                // 2. SPECTRAL SPREAD - X-axis creates stereo-like frequency spread
+                if (params.spectralSpread > 0.01) {
+                    const newMagnitudes = new Float32Array(magnitudes.length);
+                    for (let bin = 0; bin < magnitudes.length; bin++) {
+                        const spreadFactor = 1 + (Math.sin(bin * 0.1) * params.spectralSpread);
+                        const targetBin = Math.floor(bin * spreadFactor);
+                        if (targetBin < magnitudes.length) {
+                            newMagnitudes[targetBin] += magnitudes[bin] * 0.7;
+                            newMagnitudes[bin] += magnitudes[bin] * 0.3;
+                        }
+                    }
+                    for (let bin = 0; bin < magnitudes.length; bin++) {
+                        magnitudes[bin] = newMagnitudes[bin];
+                    }
                 }
                 
-                // EXTREME FREQUENCY SHIFTING
-                if (Math.abs(params.spectralShift) > 0.1) {
+                // 3. SPECTRAL SHIFT - X-axis center shifts all frequencies
+                if (Math.abs(params.spectralShift) > 0.01) {
                     const newMagnitudes = new Float32Array(magnitudes.length);
                     for (let bin = 0; bin < magnitudes.length; bin++) {
                         const shiftedBin = Math.floor(bin * (1 + params.spectralShift));
@@ -223,25 +246,69 @@
                         }
                     }
                     for (let bin = 0; bin < magnitudes.length; bin++) {
-                        magnitudes[bin] = newMagnitudes[bin];
+                        magnitudes[bin] = newMagnitudes[bin] * 0.7 + magnitudes[bin] * 0.3;
                     }
                 }
                 
-                // SPECTRAL SHAPING - shape frequency zones based on Y-axis
-                const numBins = magnitudes.length;
-                for (let bin = 0; bin < numBins; bin++) {
-                    const percentileIdx = Math.floor((bin / numBins) * (params.spectralCrush.length - 1));
-                    const crushAmount = Math.abs(params.spectralCrush[percentileIdx]);
-                    
-                    // Moderate shaping based on mesh profile
-                    if (crushAmount < 0.5) {
-                        magnitudes[bin] *= 0.5;
-                    } else if (crushAmount > 1.5) {
-                        magnitudes[bin] *= 1.8;
+                // 4. PHASE SCRAMBLE - Z-axis scrambles phase relationships
+                if (params.phaseScramble > 0.01) {
+                    for (let bin = 0; bin < phases.length; bin++) {
+                        const zIdx = Math.floor((bin / phases.length) * (params.zProfile.length - 1));
+                        const scramble = params.zProfile[zIdx] * params.phaseScramble;
+                        phases[bin] += scramble * Math.PI;
                     }
                 }
                 
-                // Convert back
+                // 5. SPECTRAL SMEAR - Z-axis smears frequencies over time
+                if (params.spectralSmear > 0.01 && prevMagnitudes) {
+                    for (let bin = 0; bin < magnitudes.length; bin++) {
+                        magnitudes[bin] = magnitudes[bin] * (1 - params.spectralSmear) +
+                                         prevMagnitudes[bin] * params.spectralSmear;
+                    }
+                }
+                
+                // 6. SPECTRAL BLUR - variance blurs adjacent bins
+                if (params.spectralBlur > 0.01) {
+                    const blurred = new Float32Array(magnitudes.length);
+                    const blurWidth = Math.ceil(params.spectralBlur * 10);
+                    for (let bin = 0; bin < magnitudes.length; bin++) {
+                        let sum = 0;
+                        let count = 0;
+                        for (let offset = -blurWidth; offset <= blurWidth; offset++) {
+                            const targetBin = bin + offset;
+                            if (targetBin >= 0 && targetBin < magnitudes.length) {
+                                sum += magnitudes[targetBin];
+                                count++;
+                            }
+                        }
+                        blurred[bin] = sum / count;
+                    }
+                    for (let bin = 0; bin < magnitudes.length; bin++) {
+                        magnitudes[bin] = magnitudes[bin] * (1 - params.spectralBlur) +
+                                         blurred[bin] * params.spectralBlur;
+                    }
+                }
+                
+                // 7. BIN SKIP - surface complexity skips/emphasizes bins
+                if (params.binSkip > 0) {
+                    for (let bin = 0; bin < magnitudes.length; bin++) {
+                        if (bin % (params.binSkip + 1) !== 0) {
+                            magnitudes[bin] *= 0.3;
+                        } else {
+                            magnitudes[bin] *= 1.5;
+                        }
+                    }
+                }
+                
+                // 8. SPECTRAL DENSITY - volume controls overall presence
+                const densityGain = 0.5 + params.spectralDensity * 0.8;
+                for (let bin = 0; bin < magnitudes.length; bin++) {
+                    magnitudes[bin] *= densityGain;
+                }
+                
+                prevMagnitudes = new Float32Array(magnitudes);
+                
+                // Convert back to rectangular
                 for (let bin = 0; bin < real.length; bin++) {
                     real[bin] = magnitudes[bin] * Math.cos(phases[bin]);
                     imag[bin] = magnitudes[bin] * Math.sin(phases[bin]);
@@ -249,10 +316,11 @@
                 
                 const processed = fft.inverse(real, imag);
                 
+                // Overlap-add
                 for (let j = 0; j < processed.length; j++) {
                     if (i + j < output.length) {
                         const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * j / fftSize);
-                        output[i + j] += processed[j] * w * 0.4;
+                        output[i + j] += processed[j] * w * 0.5;
                     }
                 }
             }
@@ -285,12 +353,10 @@
                 throw new Error('No audio loaded');
             }
 
-            let processedBuffer = this.sourceBuffer;
+            // SPECTRAL PROCESSING
+            const spectralChannels = await spectralTransform(this.sourceBuffer, params);
             
-            // SPECTRAL DESTRUCTION
-            const spectralChannels = await spectralDestroy(this.sourceBuffer, params);
-            
-            processedBuffer = this.audioContext.createBuffer(
+            let processedBuffer = this.audioContext.createBuffer(
                 spectralChannels.length,
                 spectralChannels[0].length,
                 this.sourceBuffer.sampleRate
@@ -300,7 +366,7 @@
                 processedBuffer.copyToChannel(spectralChannels[ch], ch);
             }
             
-            // Build INTENSE DSP chain
+            // REVERB ONLY
             const offlineContext = new OfflineAudioContext(
                 processedBuffer.numberOfChannels,
                 processedBuffer.length,
@@ -310,83 +376,10 @@
             const source = offlineContext.createBufferSource();
             source.buffer = processedBuffer;
             
-            let currentNode = source;
-            
-            // DISTORTION (kept as-is)
-            if (params.distortionAmount > 0) {
-                const distortion = offlineContext.createWaveShaper();
-                distortion.curve = this.makeDistortionCurve(params.distortionAmount);
-                distortion.oversample = '4x';
-                currentNode.connect(distortion);
-                currentNode = distortion;
-            }
-            
-            // MODERATE CHORUS - 2 voices for clarity
-            const chorus1 = offlineContext.createDelay(0.1);
-            const chorus2 = offlineContext.createDelay(0.1);
-            
-            chorus1.delayTime.value = 0.015 + params.chorusDepth;
-            chorus2.delayTime.value = 0.028 + params.chorusDepth * 1.4;
-            
-            const chorusFeedback = offlineContext.createGain();
-            chorusFeedback.gain.value = params.chorusFeedback;
-            
-            const chorusMix = offlineContext.createGain();
-            chorusMix.gain.value = 0.5;
-            
-            currentNode.connect(chorus1);
-            currentNode.connect(chorus2);
-            
-            chorus1.connect(chorusMix);
-            chorus2.connect(chorusMix);
-            
-            chorusMix.connect(chorusFeedback);
-            chorusFeedback.connect(chorus1);
-            
-            // NOTICEABLE FLANGING
-            const flanger = offlineContext.createDelay(0.015);
-            flanger.delayTime.value = 0.001 + params.flangeDepth;
-            
-            const flangeFilter = offlineContext.createBiquadFilter();
-            flangeFilter.type = 'bandpass';
-            flangeFilter.frequency.value = 1000;
-            flangeFilter.Q.value = params.flangeResonance;
-            
-            const flangeFeedback = offlineContext.createGain();
-            flangeFeedback.gain.value = params.flangeFeedback;
-            
-            const flangeMix = offlineContext.createGain();
-            flangeMix.gain.value = 0.5;
-            
-            currentNode.connect(flanger);
-            chorusMix.connect(flanger);
-            
-            flanger.connect(flangeFilter);
-            flangeFilter.connect(flangeFeedback);
-            flangeFeedback.connect(flanger);
-            flangeFilter.connect(flangeMix);
-            
-            // DELAY FOR DEPTH
-            const delay = offlineContext.createDelay(1.0);
-            const delayFeedback = offlineContext.createGain();
-            const delayMix = offlineContext.createGain();
-            
-            delay.delayTime.value = params.delayTime;
-            delayFeedback.gain.value = params.delayFeedback;
-            delayMix.gain.value = 0.25;
-            
-            currentNode.connect(delay);
-            chorusMix.connect(delay);
-            flangeMix.connect(delay);
-            
-            delay.connect(delayFeedback);
-            delayFeedback.connect(delay);
-            delay.connect(delayMix);
-            
-            // BIG REVERB
+            // Reverb
             const convolver = offlineContext.createConvolver();
-            convolver.buffer = this.createBigReverb(
-                offlineContext.sampleRate,
+            convolver.buffer = this.createReverb(
+                offlineContext,
                 params.reverbSize,
                 params.reverbDecay,
                 params.reverbDiffusion
@@ -395,30 +388,15 @@
             const reverbMix = offlineContext.createGain();
             reverbMix.gain.value = params.reverbMix;
             
-            currentNode.connect(convolver);
-            chorusMix.connect(convolver);
-            flangeMix.connect(convolver);
-            delayMix.connect(convolver);
-            
-            convolver.connect(reverbMix);
-            
-            // DRY SIGNAL
             const dryGain = offlineContext.createGain();
-            dryGain.gain.value = 0.6;
+            dryGain.gain.value = 0.7;
             
-            currentNode.connect(dryGain);
-            chorusMix.connect(dryGain);
+            source.connect(convolver);
+            convolver.connect(reverbMix);
+            source.connect(dryGain);
             
-            // MASTER OUT
-            const masterGain = offlineContext.createGain();
-            masterGain.gain.value = 0.95;
-            
-            dryGain.connect(masterGain);
-            flangeMix.connect(masterGain);
-            delayMix.connect(masterGain);
-            reverbMix.connect(masterGain);
-            
-            masterGain.connect(offlineContext.destination);
+            dryGain.connect(offlineContext.destination);
+            reverbMix.connect(offlineContext.destination);
 
             source.start(0);
             
@@ -426,25 +404,13 @@
             return this.processedBuffer;
         }
         
-        makeDistortionCurve(amount) {
-            const samples = 44100;
-            const curve = new Float32Array(samples);
-            const deg = Math.PI / 180;
-            
-            for (let i = 0; i < samples; i++) {
-                const x = (i * 2) / samples - 1;
-                curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
-            }
-            
-            return curve;
-        }
-        
-        createBigReverb(sampleRate, size, decay, diffusion) {
+        createReverb(context, size, decay, diffusion) {
+            const sampleRate = context.sampleRate;
             const duration = Math.max(1, size);
             const length = Math.floor(sampleRate * duration);
-            const impulse = new Float32Array(length);
+            const impulse = context.createBuffer(1, length, sampleRate);
+            const impulseData = impulse.getChannelData(0);
             
-            // Create rich, diffuse reverb
             for (let i = 0; i < length; i++) {
                 const t = i / length;
                 const envelope = Math.pow(1 - t, decay * 2.5);
@@ -460,19 +426,26 @@
                     }
                 }
                 
-                // Add late reflections
                 if (t > 0.3) {
                     sample += (Math.random() * 2 - 1) * Math.pow(1 - t, decay * 4) * 0.8;
                 }
                 
-                impulse[i] = sample * envelope;
+                impulseData[i] = sample * envelope;
             }
             
-            return this.audioContext.createBuffer(1, length, sampleRate);
+            return impulse;
         }
         
-        play(buffer) {
+        async play(buffer) {
             if (this.isPlaying) this.stop();
+            
+            // Ensure audio context exists and is running
+            if (!this.audioContext) {
+                await this.init();
+            }
+            if (this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
             
             this.currentSource = this.audioContext.createBufferSource();
             this.currentSource.buffer = buffer || this.processedBuffer;
@@ -587,7 +560,7 @@
             paramsDisplay.style.display = 'block';
             
             paramsList.innerHTML = Object.entries(audioParams)
-                .filter(([key]) => key !== 'spectralCrush')
+                .filter(([key]) => !key.includes('Profile') && !key.includes('Curve'))
                 .map(([key, value]) => `<p>${key}: ${typeof value === 'number' ? value.toFixed(3) : value}</p>`)
                 .join('');
             
@@ -627,8 +600,8 @@
         }
     });
     
-    document.getElementById('play-btn').addEventListener('click', () => {
-        audioProcessor.play();
+    document.getElementById('play-btn').addEventListener('click', async () => {
+        await audioProcessor.play();
         document.getElementById('stop-btn').disabled = false;
     });
     
