@@ -83,111 +83,43 @@
             const byX = [...vertices].sort((a, b) => a.x - b.x);
             const byY = [...vertices].sort((a, b) => a.y - b.y);
             const byZ = [...vertices].sort((a, b) => a.z - b.z);
-            const byDistance = [...vertices].sort((a, b) => {
-                const distA = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
-                const distB = Math.sqrt(b.x**2 + b.y**2 + b.z**2);
-                return distA - distB;
-            });
             
-            // Calculate geometric complexity
-            const calculateAngularVariance = (verts) => {
-                let angleSum = 0;
-                for (let i = 0; i < verts.length - 2; i++) {
-                    const v1 = verts[i];
-                    const v2 = verts[i + 1];
-                    const v3 = verts[i + 2];
-                    
-                    const angle = Math.atan2(v2.y - v1.y, v2.x - v1.x) - 
-                                  Math.atan2(v3.y - v2.y, v3.x - v2.x);
-                    angleSum += Math.abs(angle);
-                }
-                return angleSum / (verts.length - 2);
-            };
+            const xSpread = byX[byX.length - 1].x - byX[0].x;
+            const ySpread = byY[byY.length - 1].y - byY[0].y;
+            const zSpread = byZ[byZ.length - 1].z - byZ[0].z;
+            const volume = xSpread * ySpread * zSpread;
             
-            const calculateDensity = (verts) => {
-                let densitySum = 0;
-                const sampleSize = Math.min(100, verts.length);
-                for (let i = 0; i < sampleSize; i++) {
-                    const idx = Math.floor(i * verts.length / sampleSize);
-                    const v = verts[idx];
-                    let nearCount = 0;
-                    const threshold = 0.5;
-                    
-                    for (let j = 0; j < Math.min(20, verts.length); j++) {
-                        const compareIdx = (idx + j) % verts.length;
-                        const cv = verts[compareIdx];
-                        const dist = Math.sqrt(
-                            Math.pow(v.x - cv.x, 2) + 
-                            Math.pow(v.y - cv.y, 2) + 
-                            Math.pow(v.z - cv.z, 2)
-                        );
-                        if (dist < threshold && dist > 0) nearCount++;
-                    }
-                    densitySum += nearCount;
-                }
-                return densitySum / sampleSize;
-            };
-            
-            const stats = {
-                x10: byX[Math.floor(vertices.length * 0.1)].x,
-                x50: byX[Math.floor(vertices.length * 0.5)].x,
-                x90: byX[Math.floor(vertices.length * 0.9)].x,
-                
-                y10: byY[Math.floor(vertices.length * 0.1)].y,
-                y50: byY[Math.floor(vertices.length * 0.5)].y,
-                y90: byY[Math.floor(vertices.length * 0.9)].y,
-                
-                z10: byZ[Math.floor(vertices.length * 0.1)].z,
-                z50: byZ[Math.floor(vertices.length * 0.5)].z,
-                z90: byZ[Math.floor(vertices.length * 0.9)].z,
-                
-                minDist: Math.sqrt(byDistance[0].x**2 + byDistance[0].y**2 + byDistance[0].z**2),
-                medianDist: Math.sqrt(
-                    byDistance[Math.floor(vertices.length * 0.5)].x**2 +
-                    byDistance[Math.floor(vertices.length * 0.5)].y**2 +
-                    byDistance[Math.floor(vertices.length * 0.5)].z**2
-                ),
-                maxDist: Math.sqrt(
-                    byDistance[vertices.length - 1].x**2 +
-                    byDistance[vertices.length - 1].y**2 +
-                    byDistance[vertices.length - 1].z**2
-                ),
-                
-                xSpread: byX[byX.length - 1].x - byX[0].x,
-                ySpread: byY[byY.length - 1].y - byY[0].y,
-                zSpread: byZ[byZ.length - 1].z - byZ[0].z,
-                
-                centerX: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
-                centerY: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length,
-                centerZ: vertices.reduce((sum, v) => sum + v.z, 0) / vertices.length,
-                
-                variance: this.calculateVariance(vertices),
-                angularVariance: calculateAngularVariance(vertices),
-                density: calculateDensity(vertices),
-                aspectRatio: Math.max(
-                    (byX[byX.length - 1].x - byX[0].x) / (byY[byY.length - 1].y - byY[0].y || 1),
-                    (byY[byY.length - 1].y - byY[0].y) / (byX[byX.length - 1].x - byX[0].x || 1)
-                )
-            };
-            
-            return stats;
-        }
-        
-        static calculateVariance(vertices) {
-            const mean = {
-                x: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
-                y: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length,
-                z: vertices.reduce((sum, v) => sum + v.z, 0) / vertices.length
-            };
+            const centerX = vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length;
+            const centerY = vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length;
+            const centerZ = vertices.reduce((sum, v) => sum + v.z, 0) / vertices.length;
             
             const variance = vertices.reduce((sum, v) => {
                 return sum + 
-                    Math.pow(v.x - mean.x, 2) +
-                    Math.pow(v.y - mean.y, 2) +
-                    Math.pow(v.z - mean.z, 2);
+                    Math.pow(v.x - centerX, 2) +
+                    Math.pow(v.y - centerY, 2) +
+                    Math.pow(v.z - centerZ, 2);
             }, 0) / vertices.length;
             
-            return variance;
+            // Calculate Y percentiles for spectral destruction zones
+            const yPercentiles = [];
+            for (let i = 0; i <= 10; i++) {
+                const idx = Math.floor((i / 10) * (byY.length - 1));
+                yPercentiles.push(byY[idx].y);
+            }
+            
+            const stats = {
+                volume: volume,
+                xSpread: xSpread,
+                ySpread: ySpread,
+                zSpread: zSpread,
+                centerY: centerY,
+                centerZ: centerZ,
+                variance: variance,
+                yPercentiles: yPercentiles,
+                surfaceComplexity: Math.sqrt(variance / (Math.abs(volume) || 1))
+            };
+            
+            return stats;
         }
         
         static mapToAudioParams(stats) {
@@ -196,55 +128,40 @@
             };
             
             return {
-                // Original parameters
-                reverbSize: normalize(stats.medianDist, 0, 10),
-                reverbDamping: normalize(stats.variance, 0, 5),
-                reverbWetness: normalize(stats.ySpread, 0, 5) * 0.5,
+                // CONTROLLED SPECTRAL PROCESSING
+                spectralFreeze: normalize(stats.variance, 0, 10) * 0.4,
+                spectralShift: (normalize(stats.centerY, -5, 5) - 0.5) * 0.8,
+                spectralCrush: stats.yPercentiles,
                 
-                delayTime: normalize(stats.zSpread, 0, 5) * 0.5,
-                delayFeedback: normalize(Math.abs(stats.centerZ), 0, 3) * 0.7,
+                // MODERATE CHORUS - 2 voices
+                chorusDepth: 0.008 + normalize(stats.xSpread, 0, 10) * 0.022,
+                chorusRate: 0.5 + normalize(stats.surfaceComplexity, 0, 3) * 2.5,
+                chorusFeedback: normalize(stats.zSpread, 0, 10) * 0.3,
                 
-                filterFreq: 200 + normalize(stats.y90, -5, 5) * 3800,
-                filterQ: 1 + normalize(stats.xSpread, 0, 5) * 10,
+                // NOTICEABLE FLANGING
+                flangeDepth: 0.002 + normalize(stats.centerZ + 5, 0, 10) * 0.006,
+                flangeRate: 0.2 + normalize(stats.surfaceComplexity, 0, 3) * 1.3,
+                flangeFeedback: 0.3 + normalize(stats.variance, 0, 10) * 0.3,
+                flangeResonance: 3 + normalize(stats.ySpread, 0, 10) * 7,
                 
+                // BIG REVERB (but not drowning)
+                reverbSize: 1.5 + Math.cbrt(Math.abs(stats.volume)) * 3,
+                reverbDecay: 0.5 + normalize(Math.abs(stats.volume), 0, 100) * 0.3,
+                reverbDiffusion: normalize(stats.surfaceComplexity, 0, 2),
+                reverbMix: 0.25 + normalize(Math.abs(stats.volume), 0, 50) * 0.35,
+                
+                // Keep distortion as-is
                 distortionAmount: normalize(stats.variance, 0, 10) * 50,
                 
-                pan: Math.max(-1, Math.min(1, stats.centerX / 5)),
-                
-                chorusDepth: normalize(stats.x90 - stats.x10, 0, 5),
-                chorusRate: 0.5 + normalize(stats.minDist, 0, 2) * 4,
-                
-                // NEW SPECTRAL PARAMETERS
-                spectralMashAmount: normalize(stats.variance, 0, 10),
-                spectralMashFreqMod: normalize(stats.angularVariance, 0, 3),
-                
-                spectralTiltAmount: (normalize(stats.centerY, -5, 5) - 0.5) * 2,
-                spectralTiltPivot: 1000 + normalize(stats.medianDist, 0, 10) * 4000,
-                
-                deharmonizeAmount: normalize(stats.density, 0, 10) * 0.5,
-                deharmonizeShift: normalize(stats.aspectRatio, 1, 5),
-                
-                spectralSmearAmount: normalize(stats.xSpread, 0, 10) * 0.8,
-                spectralSmearTime: normalize(stats.zSpread, 0, 5) * 0.3,
-                
-                formantShift: (normalize(stats.z50, -5, 5) - 0.5) * 2,
-                
-                ringModFreq: 50 + normalize(stats.maxDist, 0, 10) * 950,
-                ringModAmount: normalize(Math.abs(stats.centerX), 0, 5) * 0.7,
-                
-                granularSize: 0.02 + normalize(stats.minDist, 0, 3) * 0.18,
-                granularOverlap: 0.5 + normalize(stats.y10, -5, 5) * 0.4,
-                
-                bitcrushAmount: normalize(stats.variance * stats.density, 0, 50),
-                
-                spectralShimmerAmount: normalize(stats.ySpread * stats.xSpread, 0, 25) * 0.6,
-                spectralShimmerRate: 0.1 + normalize(stats.angularVariance, 0, 3) * 0.9
+                // Delay for depth
+                delayTime: 0.08 + normalize(stats.zSpread, 0, 10) * 0.22,
+                delayFeedback: 0.2 + normalize(Math.abs(stats.centerZ), 0, 5) * 0.35
             };
         }
     }
     
-    // ADVANCED SPECTRAL PROCESSING
-    async function spectralProcess(inputBuffer, params) {
+    // AGGRESSIVE SPECTRAL DESTRUCTION
+    async function spectralDestroy(inputBuffer, params) {
         const sampleRate = inputBuffer.sampleRate;
         const numChannels = inputBuffer.numberOfChannels;
         const outputLength = inputBuffer.length;
@@ -262,13 +179,11 @@
             const output = outputChannels[ch];
             const fft = new FFT(fftSize, sampleRate);
             
-            let prevMagnitudes = null;
-            let prevPhases = null;
+            let frozenMagnitudes = null;
             
             for (let i = 0; i < input.length - fftSize; i += hopSize) {
                 const chunk = input.slice(i, i + fftSize);
                 
-                // Apply window
                 const windowed = new Float32Array(fftSize);
                 for (let j = 0; j < fftSize; j++) {
                     const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * j / fftSize);
@@ -277,69 +192,34 @@
                 
                 fft.forward(windowed);
                 
-                let real = new Float32Array(fft.real);
-                let imag = new Float32Array(fft.imag);
-                
+                const real = new Float32Array(fft.real);
+                const imag = new Float32Array(fft.imag);
                 const magnitudes = new Float32Array(real.length);
                 const phases = new Float32Array(real.length);
                 
-                // Convert to magnitude/phase
                 for (let bin = 0; bin < real.length; bin++) {
                     magnitudes[bin] = Math.sqrt(real[bin]**2 + imag[bin]**2);
                     phases[bin] = Math.atan2(imag[bin], real[bin]);
                 }
                 
-                // SPECTRAL MASH
-                if (params.spectralMashAmount > 0.01) {
-                    for (let bin = 0; bin < magnitudes.length; bin++) {
-                        const freq = bin * sampleRate / fftSize;
-                        const mashMod = 1 + params.spectralMashAmount * 
-                            Math.sin(freq * params.spectralMashFreqMod * 0.001);
-                        magnitudes[bin] *= mashMod;
-                    }
+                // SPECTRAL FREEZING - hold onto spectral content
+                if (!frozenMagnitudes || Math.random() > params.spectralFreeze) {
+                    frozenMagnitudes = new Float32Array(magnitudes);
                 }
                 
-                // SPECTRAL TILT
-                if (Math.abs(params.spectralTiltAmount) > 0.01) {
-                    for (let bin = 0; bin < magnitudes.length; bin++) {
-                        const freq = bin * sampleRate / fftSize;
-                        const tiltDb = params.spectralTiltAmount * 
-                            Math.log10(Math.max(1, freq / params.spectralTiltPivot)) * 20;
-                        const tiltGain = Math.pow(10, tiltDb / 20);
-                        magnitudes[bin] *= tiltGain;
-                    }
+                // Blend frozen with current
+                for (let bin = 0; bin < magnitudes.length; bin++) {
+                    magnitudes[bin] = magnitudes[bin] * (1 - params.spectralFreeze) + 
+                                     frozenMagnitudes[bin] * params.spectralFreeze;
                 }
                 
-                // DEHARMONIZATION
-                if (params.deharmonizeAmount > 0.01) {
+                // EXTREME FREQUENCY SHIFTING
+                if (Math.abs(params.spectralShift) > 0.1) {
                     const newMagnitudes = new Float32Array(magnitudes.length);
                     for (let bin = 0; bin < magnitudes.length; bin++) {
-                        const freq = bin * sampleRate / fftSize;
-                        const shift = params.deharmonizeShift * (1 + Math.sin(freq * 0.01) * 0.3);
-                        const newBin = Math.floor(bin * shift) % magnitudes.length;
-                        newMagnitudes[newBin] += magnitudes[bin] * params.deharmonizeAmount;
-                        newMagnitudes[bin] += magnitudes[bin] * (1 - params.deharmonizeAmount);
-                    }
-                    for (let bin = 0; bin < magnitudes.length; bin++) {
-                        magnitudes[bin] = newMagnitudes[bin];
-                    }
-                }
-                
-                // SPECTRAL SMEAR
-                if (params.spectralSmearAmount > 0.01 && prevMagnitudes) {
-                    for (let bin = 0; bin < magnitudes.length; bin++) {
-                        magnitudes[bin] = magnitudes[bin] * (1 - params.spectralSmearAmount) +
-                                         prevMagnitudes[bin] * params.spectralSmearAmount;
-                    }
-                }
-                
-                // FORMANT SHIFTING
-                if (Math.abs(params.formantShift) > 0.01) {
-                    const newMagnitudes = new Float32Array(magnitudes.length);
-                    for (let bin = 0; bin < magnitudes.length; bin++) {
-                        const shiftedBin = Math.floor(bin * (1 + params.formantShift * 0.5));
-                        if (shiftedBin < magnitudes.length) {
-                            newMagnitudes[shiftedBin] = magnitudes[bin];
+                        const shiftedBin = Math.floor(bin * (1 + params.spectralShift));
+                        if (shiftedBin >= 0 && shiftedBin < magnitudes.length) {
+                            newMagnitudes[shiftedBin] += magnitudes[bin];
                         }
                     }
                     for (let bin = 0; bin < magnitudes.length; bin++) {
@@ -347,28 +227,21 @@
                     }
                 }
                 
-                // SPECTRAL SHIMMER
-                if (params.spectralShimmerAmount > 0.01) {
-                    const shimmerPhase = (i / sampleRate) * params.spectralShimmerRate * Math.PI * 2;
-                    for (let bin = Math.floor(magnitudes.length * 0.3); bin < magnitudes.length; bin++) {
-                        const shimmer = Math.sin(shimmerPhase + bin * 0.1) * params.spectralShimmerAmount;
-                        magnitudes[bin] *= (1 + shimmer);
+                // SPECTRAL SHAPING - shape frequency zones based on Y-axis
+                const numBins = magnitudes.length;
+                for (let bin = 0; bin < numBins; bin++) {
+                    const percentileIdx = Math.floor((bin / numBins) * (params.spectralCrush.length - 1));
+                    const crushAmount = Math.abs(params.spectralCrush[percentileIdx]);
+                    
+                    // Moderate shaping based on mesh profile
+                    if (crushAmount < 0.5) {
+                        magnitudes[bin] *= 0.5;
+                    } else if (crushAmount > 1.5) {
+                        magnitudes[bin] *= 1.8;
                     }
                 }
                 
-                // BITCRUSH IN SPECTRAL DOMAIN
-                if (params.bitcrushAmount > 0.01) {
-                    const levels = Math.max(2, Math.floor(256 - params.bitcrushAmount * 240));
-                    for (let bin = 0; bin < magnitudes.length; bin++) {
-                        magnitudes[bin] = Math.floor(magnitudes[bin] * levels) / levels;
-                    }
-                }
-                
-                // Store for next iteration
-                prevMagnitudes = new Float32Array(magnitudes);
-                prevPhases = new Float32Array(phases);
-                
-                // Convert back to real/imaginary
+                // Convert back
                 for (let bin = 0; bin < real.length; bin++) {
                     real[bin] = magnitudes[bin] * Math.cos(phases[bin]);
                     imag[bin] = magnitudes[bin] * Math.sin(phases[bin]);
@@ -376,11 +249,10 @@
                 
                 const processed = fft.inverse(real, imag);
                 
-                // Overlap-add
                 for (let j = 0; j < processed.length; j++) {
                     if (i + j < output.length) {
                         const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * j / fftSize);
-                        output[i + j] += processed[j] * w * 0.5;
+                        output[i + j] += processed[j] * w * 0.4;
                     }
                 }
             }
@@ -415,30 +287,20 @@
 
             let processedBuffer = this.sourceBuffer;
             
-            // SPECTRAL PROCESSING FIRST
-            const needsSpectral = params.spectralMashAmount > 0.01 || 
-                                  Math.abs(params.spectralTiltAmount) > 0.01 ||
-                                  params.deharmonizeAmount > 0.01 ||
-                                  params.spectralSmearAmount > 0.01 ||
-                                  Math.abs(params.formantShift) > 0.01 ||
-                                  params.spectralShimmerAmount > 0.01 ||
-                                  params.bitcrushAmount > 0.01;
+            // SPECTRAL DESTRUCTION
+            const spectralChannels = await spectralDestroy(this.sourceBuffer, params);
             
-            if (needsSpectral) {
-                const spectralChannels = await spectralProcess(this.sourceBuffer, params);
-                
-                processedBuffer = this.audioContext.createBuffer(
-                    spectralChannels.length,
-                    spectralChannels[0].length,
-                    this.sourceBuffer.sampleRate
-                );
-                
-                for (let ch = 0; ch < spectralChannels.length; ch++) {
-                    processedBuffer.copyToChannel(spectralChannels[ch], ch);
-                }
+            processedBuffer = this.audioContext.createBuffer(
+                spectralChannels.length,
+                spectralChannels[0].length,
+                this.sourceBuffer.sampleRate
+            );
+            
+            for (let ch = 0; ch < spectralChannels.length; ch++) {
+                processedBuffer.copyToChannel(spectralChannels[ch], ch);
             }
             
-            // STANDARD DSP CHAIN
+            // Build INTENSE DSP chain
             const offlineContext = new OfflineAudioContext(
                 processedBuffer.numberOfChannels,
                 processedBuffer.length,
@@ -450,21 +312,7 @@
             
             let currentNode = source;
             
-            // RING MODULATION
-            if (params.ringModAmount > 0.01) {
-                const ringMod = offlineContext.createOscillator();
-                ringMod.frequency.value = params.ringModFreq;
-                const ringGain = offlineContext.createGain();
-                ringGain.gain.value = params.ringModAmount;
-                
-                ringMod.connect(ringGain);
-                
-                // This is a simplified ring mod - real implementation would need custom processing
-                currentNode.connect(ringGain);
-                currentNode = ringGain;
-            }
-            
-            // DISTORTION - DO NOT CHANGE THESE PARAMETERS
+            // DISTORTION (kept as-is)
             if (params.distortionAmount > 0) {
                 const distortion = offlineContext.createWaveShaper();
                 distortion.curve = this.makeDistortionCurve(params.distortionAmount);
@@ -473,52 +321,104 @@
                 currentNode = distortion;
             }
             
-            const filter = offlineContext.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = params.filterFreq;
-            filter.Q.value = params.filterQ;
-            currentNode.connect(filter);
-            currentNode = filter;
+            // MODERATE CHORUS - 2 voices for clarity
+            const chorus1 = offlineContext.createDelay(0.1);
+            const chorus2 = offlineContext.createDelay(0.1);
             
+            chorus1.delayTime.value = 0.015 + params.chorusDepth;
+            chorus2.delayTime.value = 0.028 + params.chorusDepth * 1.4;
+            
+            const chorusFeedback = offlineContext.createGain();
+            chorusFeedback.gain.value = params.chorusFeedback;
+            
+            const chorusMix = offlineContext.createGain();
+            chorusMix.gain.value = 0.5;
+            
+            currentNode.connect(chorus1);
+            currentNode.connect(chorus2);
+            
+            chorus1.connect(chorusMix);
+            chorus2.connect(chorusMix);
+            
+            chorusMix.connect(chorusFeedback);
+            chorusFeedback.connect(chorus1);
+            
+            // NOTICEABLE FLANGING
+            const flanger = offlineContext.createDelay(0.015);
+            flanger.delayTime.value = 0.001 + params.flangeDepth;
+            
+            const flangeFilter = offlineContext.createBiquadFilter();
+            flangeFilter.type = 'bandpass';
+            flangeFilter.frequency.value = 1000;
+            flangeFilter.Q.value = params.flangeResonance;
+            
+            const flangeFeedback = offlineContext.createGain();
+            flangeFeedback.gain.value = params.flangeFeedback;
+            
+            const flangeMix = offlineContext.createGain();
+            flangeMix.gain.value = 0.5;
+            
+            currentNode.connect(flanger);
+            chorusMix.connect(flanger);
+            
+            flanger.connect(flangeFilter);
+            flangeFilter.connect(flangeFeedback);
+            flangeFeedback.connect(flanger);
+            flangeFilter.connect(flangeMix);
+            
+            // DELAY FOR DEPTH
             const delay = offlineContext.createDelay(1.0);
-            const delayGain = offlineContext.createGain();
             const delayFeedback = offlineContext.createGain();
-            const delayWet = offlineContext.createGain();
+            const delayMix = offlineContext.createGain();
             
             delay.delayTime.value = params.delayTime;
             delayFeedback.gain.value = params.delayFeedback;
-            delayWet.gain.value = 0.3;
+            delayMix.gain.value = 0.25;
             
             currentNode.connect(delay);
-            delay.connect(delayGain);
-            delayGain.connect(delayFeedback);
-            delayFeedback.connect(delay);
-            delayGain.connect(delayWet);
+            chorusMix.connect(delay);
+            flangeMix.connect(delay);
             
+            delay.connect(delayFeedback);
+            delayFeedback.connect(delay);
+            delay.connect(delayMix);
+            
+            // BIG REVERB
             const convolver = offlineContext.createConvolver();
-            convolver.buffer = this.createReverbImpulse(
+            convolver.buffer = this.createBigReverb(
                 offlineContext.sampleRate,
-                params.reverbSize * 4,
-                params.reverbDamping
+                params.reverbSize,
+                params.reverbDecay,
+                params.reverbDiffusion
             );
             
-            const reverbWet = offlineContext.createGain();
-            reverbWet.gain.value = params.reverbWetness;
+            const reverbMix = offlineContext.createGain();
+            reverbMix.gain.value = params.reverbMix;
             
             currentNode.connect(convolver);
-            convolver.connect(reverbWet);
+            chorusMix.connect(convolver);
+            flangeMix.connect(convolver);
+            delayMix.connect(convolver);
             
+            convolver.connect(reverbMix);
+            
+            // DRY SIGNAL
             const dryGain = offlineContext.createGain();
-            dryGain.gain.value = 0.7;
+            dryGain.gain.value = 0.6;
+            
             currentNode.connect(dryGain);
+            chorusMix.connect(dryGain);
             
-            const panner = offlineContext.createStereoPanner();
-            panner.pan.value = params.pan;
+            // MASTER OUT
+            const masterGain = offlineContext.createGain();
+            masterGain.gain.value = 0.95;
             
-            dryGain.connect(panner);
-            delayWet.connect(panner);
-            reverbWet.connect(panner);
-            panner.connect(offlineContext.destination);
+            dryGain.connect(masterGain);
+            flangeMix.connect(masterGain);
+            delayMix.connect(masterGain);
+            reverbMix.connect(masterGain);
+            
+            masterGain.connect(offlineContext.destination);
 
             source.start(0);
             
@@ -539,12 +439,33 @@
             return curve;
         }
         
-        createReverbImpulse(sampleRate, duration, decay) {
-            const length = sampleRate * duration;
+        createBigReverb(sampleRate, size, decay, diffusion) {
+            const duration = Math.max(1, size);
+            const length = Math.floor(sampleRate * duration);
             const impulse = new Float32Array(length);
             
+            // Create rich, diffuse reverb
             for (let i = 0; i < length; i++) {
-                impulse[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+                const t = i / length;
+                const envelope = Math.pow(1 - t, decay * 2.5);
+                
+                let sample = 0;
+                const reflections = Math.floor(15 + diffusion * 40);
+                
+                for (let r = 0; r < reflections; r++) {
+                    const reflectionTime = (r / reflections) * length;
+                    if (i > reflectionTime) {
+                        const reflection = (Math.random() * 2 - 1) * Math.exp(-r * 0.08);
+                        sample += reflection;
+                    }
+                }
+                
+                // Add late reflections
+                if (t > 0.3) {
+                    sample += (Math.random() * 2 - 1) * Math.pow(1 - t, decay * 4) * 0.8;
+                }
+                
+                impulse[i] = sample * envelope;
             }
             
             return this.audioContext.createBuffer(1, length, sampleRate);
@@ -666,7 +587,8 @@
             paramsDisplay.style.display = 'block';
             
             paramsList.innerHTML = Object.entries(audioParams)
-                .map(([key, value]) => `<p>${key}: ${value.toFixed(3)}</p>`)
+                .filter(([key]) => key !== 'spectralCrush')
+                .map(([key, value]) => `<p>${key}: ${typeof value === 'number' ? value.toFixed(3) : value}</p>`)
                 .join('');
             
             if (audioProcessor.sourceBuffer) {
