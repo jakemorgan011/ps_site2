@@ -414,7 +414,7 @@ let sketch_profile = function(p){
     img = p.loadImage('src/assets/me.jpg');
   }
   p.setup = function(){
-    let a = p.createA('https://publicservices.bandcamp.com/album/love-songs','bio','_blank');
+    let a = p.createA('bio.html','bio','_blank');
     a.style('background',c);
     a.style('text-decoration','line-underneath');
     a.style('color','black');

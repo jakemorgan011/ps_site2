@@ -210,4 +210,15 @@ body{
   }
 }
 
+/* Random class centering */
+.random {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  width: 100%;
+  text-align: center;
+}
+
 /*for shrunken desktop display*/
