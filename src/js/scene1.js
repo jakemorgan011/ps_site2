@@ -29,7 +29,6 @@ import {info_card, view_of, viewport} from './viewport.js';
 const er = document.getElementById('e');
 
 const CLEAR = {r: 0, g: 0, b: 0, a: 0};
-const LIGHT_RES = 2048;
 // the fisheye's k. lens.js mirrors it for hit tests and html over the canvas
 const FISHEYE_STRENGTH = 0.52;
 
@@ -91,6 +90,14 @@ const PORTRAIT = window.matchMedia(PORTRAIT_QUERY).matches;
 // style.css's mobile block uses the same query
 const MOBILE_QUERY = `${PORTRAIT_QUERY}, (hover: none)`;
 const MOBILE = window.matchMedia(MOBILE_QUERY).matches;
+// phones draw lighter: the canvas at 1x device pixels (every pass is fullscreen, and
+// they all pixelate anyway) and the building's light pass at half size
+const RENDER_DPR = MOBILE ? 1 : 2;
+const LIGHT_RES = MOBILE ? 1024 : 2048;
+// ?fps puts a frame time readout in the corner, for checking a phone
+const SHOW_FPS = new URLSearchParams(window.location.search).has('fps');
+// how much each new frame moves the readout's average
+const FPS_SMOOTH = 0.05;
 // radians about y off its camera facing pose. negative turns its front to screen right,
 // toward the spokes (transform.wgsl's rotateY is column major)
 const BLDNG_MOBILE_TURN = -0.35;
@@ -252,6 +259,9 @@ class draw extends sk {
   async setup(sv){
     const scene_t = sv.tg(0, 0);
     this.warm = false;
+    this.fps_el = SHOW_FPS ? document.body.appendChild(Object.assign(document.createElement('p'), {className: 'fps'})) : null;
+    this.frame_ms = 16.7;
+    this.last_t = performance.now();
     this.revealed = false;
     this.held = new Map();
     this.brand = document.querySelector('.brand');
@@ -749,8 +759,17 @@ class draw extends sk {
     this.final_q = final.ao('final', new q().st(0, 0, 0));
   }
 
+  // smoothed frame time + fps, only with ?fps
+  step_fps(){
+    const now = performance.now();
+    this.frame_ms += (now - this.last_t - this.frame_ms) * FPS_SMOOTH;
+    this.last_t = now;
+    this.fps_el.textContent = `${(1000 / this.frame_ms).toFixed(0)} fps ${this.frame_ms.toFixed(1)} ms`;
+  }
+
   draw(t, sv){
     const f = s.fn();
+    if(this.fps_el) this.step_fps();
     if(!this.revealed) this.place_loading_spokes(sv);
     this.cam_move.step(sv);
     this.step_view(sv);
@@ -828,6 +847,7 @@ class draw extends sk {
   }
 }
 
+sk.DPR = RENDER_DPR;
 new draw('m').run();
 
 window.matchMedia(PORTRAIT_QUERY).addEventListener('change', () => window.location.reload());

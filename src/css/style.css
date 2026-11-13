@@ -822,6 +822,17 @@ body > .info {
   }
 }
 
+/* ?fps only (scene1.js SHOW_FPS) */
+.fps {
+  position: fixed;
+  left: 12px;
+  top: 50%;
+  margin: 0;
+  color: #fff;
+  mix-blend-mode: difference;
+  font: 12px ui-monospace, Menlo, monospace;
+}
+
 #e {
   position: fixed;
   left: 12px;
