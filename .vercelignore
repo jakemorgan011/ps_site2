@@ -4,5 +4,3 @@
 .gitignore
 CLAUDE.md
 tools/
-# github pages' custom domain file, vercel handles the domain itself
-CNAME
