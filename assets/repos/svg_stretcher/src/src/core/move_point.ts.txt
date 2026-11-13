@@ -1,0 +1,48 @@
+import { Point, tVec2 } from '../util/svg_parser.js';
+import { MultiBounds } from './bounds.js';
+
+// a point pinned to the cell it started in, by normalized position (u,v) inside
+// that cell. `cell` indexes into grid.m_sub_bounds and stays valid across rebuilds
+// (cell order is stable), so this works for both the uniform grid and the recursive
+// leaf layout -- only the cell's box + pos change under it.
+interface PointHome {
+  pt: Point;
+  cell: number;
+  u: number;   // 0..1 across the cell's width
+  v: number;   // 0..1 down the cell's height
+}
+
+// free-form deformation: bind every point to its home cell once, then as the
+// grid's cells move/resize, apply() drops each point back at the same normalized
+// spot in its cell. the artwork morphs with the grid.
+//
+// points live in svg user space; the grid is 0-relative, so we shift by `origin`
+// (the viewBox min) going in and back out.
+export class PointWarp {
+  m_homes: PointHome[] = [];
+  m_origin: tVec2;
+  constructor(points: Point[], grid: MultiBounds, origin: tVec2){
+    this.m_origin = origin;
+    for(const pt of points){
+      let gx = pt.pos.x - origin.x;
+      let gy = pt.pos.y - origin.y;
+      let cell = grid.cell_index_at(gx, gy);
+      let c = grid.m_sub_bounds[cell];
+      this.m_homes.push({
+        pt,
+        cell,
+        u: c.box.width ? (gx - c.pos.x) / c.box.width : 0,
+        v: c.box.height ? (gy - c.pos.y) / c.box.height : 0
+      });
+    }
+  }
+
+  apply(grid: MultiBounds): void{
+    for(const h of this.m_homes){
+      let c = grid.m_sub_bounds[h.cell];
+      let gx = c.pos.x + h.u * c.box.width;
+      let gy = c.pos.y + h.v * c.box.height;
+      h.pt.set(new tVec2(gx + this.m_origin.x, gy + this.m_origin.y));
+    }
+  }
+}

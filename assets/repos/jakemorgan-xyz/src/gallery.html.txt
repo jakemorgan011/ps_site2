@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>horse.beer/gallery</title>
+    <link rel="stylesheet" href="src/gallery/src/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  </head>
+  <body>
+    <h1><a href='index.html' style='text-decoration: underline; color: black; font-family: Arial, Helvetica, sans-serif;'>jakemorgan.xyz</a> gallery</h1>
+    <div class='gallery-wrapper'>
+
+      <div class='gallery-item'>
+        <div class='sketch-container'>
+          <div class='canvas-container' id='canvas-container-pulsar'>
+            <script src="src/gallery/src/js/sketch.js"></script>
+          </div>
+        </div>
+        <h2><a href="dimensionality.html" target="_blank">dimensionality</a> - multi dimensional FX processor</h2>
+      </div>
+
+      <div class='gallery-item'>
+        <div class='sketch-container'>
+          <div class='canvas-container' id='canvas-container-pulsar5'>
+            <script src="src/gallery/src/js/sketch.js"></script>
+          </div>
+        </div>
+        <h2><a href="https://publicservices.gumroad.com/" target="_blank">racecar</a> - seemless multi-algorithm distortion</h2>
+      </div>
+
+      <div class='gallery-item'>
+        <div class='sketch-container'>
+          <div class='canvas-container' id='canvas-container-pulsar2'>
+            <script src="src/gallery/src/js/sketch.js"></script>
+          </div>
+        </div>
+        <h2><a href="https://github.com/jakemorgan011/noise_forces" target="_blank">_wind</a> - zero input, audio generating, forces simulation</h2>
+      </div>
+
+      <div class='gallery-item'>
+        <div class='sketch-container'>
+          <div class='canvas-container' id='canvas-container-pulsar3'>
+            <script src="src/gallery/src/js/sketch.js"></script>
+          </div>
+        </div>
+        <h2><a href="https://github.com/jakemorgan011/_keypress/tree/javascriptBranch" target="_blank">_tri</a> - geometry based sound generation (protoype)</h2>
+      </div>
+
+      <div class='gallery-item'>
+        <div class='sketch-container'>
+          <div class='canvas-container' id='canvas-container-pulsar4'>
+            <script src="src/gallery/src/js/sketch.js"></script>
+          </div>
+        </div>
+        <h2><a href="https://publicservices.bandcamp.com/album/love-songs" target="_blank">love_songs</a> - EP of internet-music made with tidalcycles and supercollider</h2>
+      </div>
+
+    </div>
+
+  </body>
+</html>

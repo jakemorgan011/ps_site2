@@ -1,0 +1,29 @@
+export const SLOT_COUNT = 10;
+// number keys the slots map to, in write order. key '1' -> slot 0 ... '0' -> slot 9.
+export const SLOT_KEYS = '1234567890';
+// a 10-deep FIFO ring of saved configs. 's' writes the next slot and wraps, so the
+// 11th save overwrites slot 0, the 12th slot 1, and so on. recall a slot by its key.
+export class SaveSlots {
+    constructor() {
+        this.m_slots = new Array(SLOT_COUNT).fill(null);
+        this.m_write = 0; // next slot to (over)write
+    }
+    // stores the config, returns the key it landed on (for feedback).
+    save(config) {
+        let slot = this.m_write;
+        this.m_slots[slot] = config;
+        this.m_write = (this.m_write + 1) % SLOT_COUNT;
+        return SLOT_KEYS[slot];
+    }
+    get(slot) {
+        if (slot < 0 || slot >= SLOT_COUNT)
+            return null;
+        return this.m_slots[slot];
+    }
+    // resolve a pressed key to its stored config (null if unknown key or empty slot).
+    get_by_key(key) {
+        let slot = SLOT_KEYS.indexOf(key);
+        return slot < 0 ? null : this.get(slot);
+    }
+}
+//# sourceMappingURL=save_slots.js.map

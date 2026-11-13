@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18163500139"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'AW-18163500139');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8935 Orion Avenue — North Hills</title>
+  <meta name="description" content="Modern 1, 2 & 3 bedroom apartments in North Hills, CA. In-unit washer/dryer, included parking, and modern finishes. Now leasing: $1,000 off first month OAC. Call 661-673-3919.">
+  <link rel="canonical" href="https://8935orion.com/">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav id="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="topbar-logo">
+        <img src="assets/33northFINAL.png" alt="33 North">
+      </a>
+      <a href="tel:6616733919" class="topbar-phone-mobile">661-673-3919</a>
+      <button class="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+      <ul class="topbar-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="content">
+    <aside id="sidebar">
+      <div class="sidebar-inner">
+        <h2 class="sidebar-title">8935 Orion Ave<br>North Hills, CA</h2>
+        <div class="sidebar-contact">
+          <a href="tel:6616733919">661-673-3919</a>
+          <a href="mailto:Eileen@omnire.co">Eileen@omnire.co</a>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#features" class="sidebar-link">Features</a>
+          <a href="#gallery" class="sidebar-link">Gallery</a>
+          <a href="#pricing" class="sidebar-link">Pricing</a>
+          <a href="#contact" class="sidebar-link">Contact</a>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="main-area">
+
+      <div class="canvas-container" id="obj-container">
+        <img class="hero-img" src="assets/Front Exterior.jpg" alt="8935 Orion Avenue exterior">
+        <div class="canvas-banner">
+          <h1>8935 Orion Avenue</h1>
+          <span class="banner-sub">Modern Apartment Homes &mdash; North Hills</span>
+          <span class="banner-offer">Now Leasing &mdash; $1,000 Off First Month OAC</span>
+        </div>
+      </div>
+
+      <div id="features" class="section">
+        <button class="section-title">Features</button>
+        <div class="section-content">
+          <p>Spacious one, two, and three bedroom residences designed for comfort, convenience, and everyday ease in the heart of North Hills.</p>
+          <span class="special-badge">Limited-Time Special &mdash; $1,000 Off First Month&rsquo;s Rent OAC</span>
+          <ul>
+            <li>Spacious 1, 2 &amp; 3 Bedroom Floor Plans</li>
+            <li>In-Unit Washer &amp; Dryer</li>
+            <li>Included Parking</li>
+            <li>Modern Interior Finishes</li>
+            <li>Comfortable Open Living Spaces</li>
+            <li>Convenient North Hills Location</li>
+          </ul>
+          <p>At 8935 Orion Avenue, home is more than square footage. It&rsquo;s the convenience of doing laundry without leaving your apartment. It&rsquo;s included parking after a long day. It&rsquo;s extra room to work, relax, host, and recharge.</p>
+          <p>Simple comforts. Smart layouts. A location that keeps you connected to everything the San Fernando Valley has to offer.</p>
+        </div>
+        <div class="section-phone">Schedule a tour &mdash; <a href="tel:6616733919">661-673-3919</a></div>
+      </div>
+
+      <div id="gallery" class="section">
+        <button class="section-title">Gallery</button>
+        <div class="gallery-carousel">
+          <img src="assets/Orion Living.jpg"    class="carousel-slide active" alt="Living Room">
+          <img src="assets/Orion Kitchen 3.jpg" class="carousel-slide"        alt="Kitchen">
+          <img src="assets/Orion Bed 2.jpg"     class="carousel-slide"        alt="Bedroom">
+          <img src="assets/Orion Bath.jpg"      class="carousel-slide"        alt="Bathroom">
+          <img src="assets/Orion WD.jpg"        class="carousel-slide"        alt="Washer &amp; Dryer">
+        </div>
+        <div class="section-content gallery-content">
+          <div class="gallery-grid">
+            <img src="assets/Orion Living.jpg"    alt="Living Room"      class="gallery-thumb">
+            <img src="assets/Orion Kitchen 3.jpg" alt="Kitchen"          class="gallery-thumb">
+            <img src="assets/Orion Bed 2.jpg"     alt="Bedroom"          class="gallery-thumb">
+            <img src="assets/Orion Bath.jpg"      alt="Bathroom"         class="gallery-thumb">
+            <img src="assets/Orion WD.jpg"        alt="Washer &amp; Dryer" class="gallery-thumb">
+          </div>
+        </div>
+        <div class="section-phone">Schedule a tour &mdash; <a href="tel:6616733919">661-673-3919</a></div>
+      </div>
+
+      <div id="pricing" class="section">
+        <button class="section-title">Pricing</button>
+        <div class="section-content">
+          <p>Whether you&rsquo;re upgrading your space, relocating, or simply ready for a fresh start, 8935 Orion Avenue offers thoughtfully designed apartment homes with the features that matter most.</p>
+          <div class="pricing-grid">
+            <div class="pricing-card">
+              <h3>One Bedroom</h3>
+              <div class="price">$1,800<span class="price-sub">/month</span></div>
+              <div class="price-sub">Starting at</div>
+            </div>
+            <div class="pricing-card">
+              <h3>Two Bedroom</h3>
+              <div class="price">$2,150<span class="price-sub">/month</span></div>
+              <div class="price-sub">Starting at</div>
+            </div>
+            <div class="pricing-card">
+              <h3>Three Bedroom</h3>
+              <div class="price">$3,000<span class="price-sub">/month</span></div>
+              <div class="price-sub">Starting at</div>
+            </div>
+          </div>
+        </div>
+        <div class="section-phone">Schedule a tour &mdash; <a href="tel:6616733919">661-673-3919</a></div>
+      </div>
+
+      <div id="contact" class="section">
+        <button class="section-title">Contact</button>
+        <div class="section-content">
+          <p>Discover available floor plans and find the space that fits your lifestyle.</p>
+          <p><strong>Schedule a Tour Today</strong></p>
+          <div class="contact-block">
+            <p>Phone: <a href="tel:6616733919">661-673-3919</a></p>
+            <p>Email: <a href="mailto:Eileen@omnire.co">Eileen@omnire.co</a></p>
+          </div>
+        </div>
+        <div class="section-phone">Schedule a tour &mdash; <a href="tel:6616733919">661-673-3919</a></div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer id="footer">
+    &copy; 2026 8935 Orion Avenue &mdash; North Hills, CA
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

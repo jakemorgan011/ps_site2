@@ -1,0 +1,185 @@
+// man ts/js sucks you can only have one constructor per class.
+// that is so stupid.
+export class tVec2 {
+  x: number;
+  y: number;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+  to_array(): number[] {
+    return [this.x, this.y];
+  }
+  distance(other: tVec2): number {
+    return Math.sqrt((other.x - this.x) ** 2 + (other.y - this.y) ** 2);
+  }
+}
+
+export type point_type = 'anchor' | 'control';
+
+export class Point {
+  pos: tVec2;
+  type: point_type;
+  constructor(pos: tVec2, type: point_type) {
+    this.pos = pos;
+    this.type = type;
+  }
+  is_type(type: point_type): boolean {
+    return this.type === type;
+  }
+  set(pos: tVec2){
+    this.pos = pos;
+  }
+}
+
+export interface PathSegment {
+  cmd: string;
+  pts: Point[];
+  path: number;
+}
+
+export class SVG {
+  points: Array<Point> = [];
+  segments: Array<PathSegment> = [];
+  raw = '';
+
+  async load(url: string): Promise<boolean> {
+    this.raw = await fetch(url).then(r => r.text());
+    this.points = [];
+    this.segments = [];
+    const paths = this._extract_path_data(this.raw);
+    for (let i = 0; i < paths.length; i++) {
+      this._parse_path(paths[i], i);
+    }
+    return true;
+  }
+
+  _extract_path_data(svg_text: string): string[] {
+    const doc = new DOMParser().parseFromString(svg_text, 'image/svg+xml');
+    return Array.from(doc.querySelectorAll('path')).map(p => p.getAttribute('d') ?? '');
+  }
+
+  // self explanatory
+  _add(x: number, y: number, type: point_type): Point {
+    const p = new Point(new tVec2(x, y), type);
+    this.points.push(p);
+    return p;
+  }
+
+  to_path_d(path: number): string {
+    let out = '';
+    for (const s of this.segments) {
+      if (s.path !== path) continue;
+      out += this._segment_str(s);
+    }
+    return out;
+  }
+
+  _segment_str(s: PathSegment): string {
+    const n = (p: Point): string => `${p.pos.x} ${p.pos.y}`;
+    switch (s.cmd) {
+      case 'Z': return 'Z';
+      case 'M': return `M${n(s.pts[0])}`;
+      case 'L': return `L${n(s.pts[0])}`;
+      case 'T': return `T${n(s.pts[0])}`;
+      case 'Q': return `Q${n(s.pts[0])} ${n(s.pts[1])}`;
+      case 'S': return `S${n(s.pts[0])} ${n(s.pts[1])}`;
+      case 'C': return `C${n(s.pts[0])} ${n(s.pts[1])} ${n(s.pts[2])}`;
+      default: return '';
+    }
+  }
+
+  _parse_path(d: string, path: number): void {
+    const tokens = d.match(/[MLHVZCSQTAmlhvzcsqta]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g) || [];
+    const is_cmd = (t: string): boolean => /^[MLHVZCSQTAmlhvzcsqta]$/.test(t);
+
+    let i = 0;
+    let cmd = '';
+    let cx = 0, cy = 0;   
+    let sx = 0, sy = 0;   
+    const num = (): number => parseFloat(tokens[i++]);
+    const seg = (c: string, ...pts: Point[]): void => { this.segments.push({ cmd: c, pts, path }); };
+
+    while (i < tokens.length) {
+      if (is_cmd(tokens[i])) cmd = tokens[i++];
+      const rel = cmd === cmd.toLowerCase();
+
+      switch (cmd.toUpperCase()) {
+        case 'M': {
+          let x = num(), y = num();
+          if (rel) { x += cx; y += cy; }
+          seg('M', this._add(x, y, 'anchor'));
+          cx = x; cy = y; sx = x; sy = y;
+          cmd = rel ? 'l' : 'L';   // extra pairs after M are implicit lineto
+          break;
+        }
+        case 'L': {
+          let x = num(), y = num();
+          if (rel) { x += cx; y += cy; }
+          seg('L', this._add(x, y, 'anchor'));
+          cx = x; cy = y;
+          break;
+        }
+        case 'H': {
+          let x = num();
+          if (rel) x += cx;
+          seg('L', this._add(x, cy, 'anchor'));
+          cx = x;
+          break;
+        }
+        case 'V': {
+          let y = num();
+          if (rel) y += cy;
+          seg('L', this._add(cx, y, 'anchor'));
+          cy = y;
+          break;
+        }
+        case 'C': {
+          let x1 = num(), y1 = num(), x2 = num(), y2 = num(), x = num(), y = num();
+          if (rel) { x1 += cx; y1 += cy; x2 += cx; y2 += cy; x += cx; y += cy; }
+          seg('C', this._add(x1, y1, 'control'), this._add(x2, y2, 'control'), this._add(x, y, 'anchor'));
+          cx = x; cy = y;
+          break;
+        }
+        case 'S': {
+          let x2 = num(), y2 = num(), x = num(), y = num();
+          if (rel) { x2 += cx; y2 += cy; x += cx; y += cy; }
+          seg('S', this._add(x2, y2, 'control'), this._add(x, y, 'anchor'));
+          cx = x; cy = y;
+          break;
+        }
+        case 'Q': {
+          let x1 = num(), y1 = num(), x = num(), y = num();
+          if (rel) { x1 += cx; y1 += cy; x += cx; y += cy; }
+          seg('Q', this._add(x1, y1, 'control'), this._add(x, y, 'anchor'));
+          cx = x; cy = y;
+          break;
+        }
+        case 'T': {
+          let x = num(), y = num();
+          if (rel) { x += cx; y += cy; }
+          seg('T', this._add(x, y, 'anchor'));
+          cx = x; cy = y;
+          break;
+        }
+        case 'A': {
+          num(); num(); num(); num(); num();   // rx ry x-rot large-arc sweep
+          let x = num(), y = num();
+          if (rel) { x += cx; y += cy; }
+          seg('L', this._add(x, y, 'anchor'));
+          cx = x; cy = y;
+          break;
+        }
+        case 'Z': {
+          seg('Z');
+          cx = sx; cy = sy;
+          break;
+        }
+        default: {
+          i++;   // unknown token, skip so we never spin
+          break;
+        }
+      }
+    }
+  }
+}

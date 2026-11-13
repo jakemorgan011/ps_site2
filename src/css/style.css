@@ -1,224 +1,834 @@
-/* use this style sheet for landing page... */
-/**/
-*{
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: rgb(252,252,255);
-  background: rgb(252,252,255);
+html {
+  background: rgb(252, 252, 255);
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-h1 a{
-  font-family: Arial, Helvetica, sans-serif;
-  text-decoration: line-underneath;
-  color: black;
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
-a{
-  font-family: 'Times New Roman', serif;
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: bold;
+  color: #111;
+  pointer-events: none;
 }
 
-body{
-  background-color: rgb(252,252,255);
-  background: rgb(252,252,255);
-}
-
-.sketch-container{
-  display: flex;
-  flex-wrap: wrap;
-  align-content: center;
-  justify-content: center;
-}
-
-.canvas-container{
-  flex: 1 1 300px;
-  min-width: 300px;
-  max-width: 300px;
-  aspect-ratio: 1;
-  position: relative;
-}
-
-.canvas-container canvas{
-  width: 100% !important;
-  height: 100% !important;
+canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: url('../../assets/cursors/normal.cur'), auto;
+}
+
+canvas.clickable {
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+:root {
+  --brand-size: clamp(28px, 4vw, 56px);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.brand,
+.credit,
+.return,
+.menu button {
+  opacity: 0;
+}
+
+.brand {
+  position: fixed;
+  top: 20px;
+  left: 24px;
+  margin: 0;
+  color: #fff;
+  mix-blend-mode: difference;
+  font-size: var(--brand-size);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  transition: top 1.6s var(--ease), left 1.6s var(--ease), transform 1.6s var(--ease);
+  animation: fade_in 0.8s 0.1s forwards;
+}
+
+body.loading .brand {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.status {
+  position: fixed;
+  top: calc(50% + var(--brand-size));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: clamp(12px, 1.4vw, 18px);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+body.loading .status {
+  opacity: 1;
+  transition-delay: 0.3s;
+}
+
+/* the tagline and the nav invert whatever's behind them, like the h1 and return */
+.credit {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  margin: 0;
+  color: #fff;
+  mix-blend-mode: difference;
+  font-size: clamp(12px, 1.4vw, 18px);
+}
+
+.credit a {
+  color: inherit;
+  text-decoration: none;
+  pointer-events: auto;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.menu {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  color: #fff;
+  mix-blend-mode: difference;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.menu button {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: clamp(18px, 2.2vw, 28px);
+  letter-spacing: -0.02em;
+  pointer-events: auto;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.return {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  mix-blend-mode: difference;
+  font: inherit;
+  font-size: clamp(14px, 1.6vw, 20px);
+  pointer-events: auto;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+body.loading .return {
+  pointer-events: none;
+}
+
+body:not(.loading) .return {
+  animation: float_in 1s 1.6s var(--ease) forwards;
+}
+
+body:not(.loading) .credit {
+  animation: float_in 1s 0.9s var(--ease) forwards;
+}
+
+body:not(.loading) .menu button {
+  animation: float_in 1s var(--ease) forwards;
+}
+
+body:not(.loading) .menu button:nth-child(1) { animation-delay: 1.1s; }
+body:not(.loading) .menu button:nth-child(2) { animation-delay: 1.25s; }
+body:not(.loading) .menu button:nth-child(3) { animation-delay: 1.4s; }
+
+body.loading .menu button {
+  pointer-events: none;
+}
+
+@keyframes fade_in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float_in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* tall screens: header stacks top-left, the nav is a bottom row with return at its end, both inverting the pixels behind */
+@media (max-aspect-ratio: 1/1) {
+  :root {
+    --brand-size: 11vw;
+    --edge: 16px;
+    --bottom: calc(var(--edge) + env(safe-area-inset-bottom));
+  }
+
+  .brand {
+    top: calc(var(--edge) + env(safe-area-inset-top));
+    left: var(--edge);
+  }
+
+  body.loading .brand {
+    top: 56%;
+    left: 50%;
+  }
+
+  .status {
+    top: calc(56% + var(--brand-size));
+  }
+
+  .credit {
+    top: calc(var(--edge) + env(safe-area-inset-top) + var(--brand-size) + 10px);
+    left: var(--edge);
+    right: auto;
+    font-size: 12px;
+  }
+
+  .menu {
+    left: var(--edge);
+    right: calc(var(--edge) + 84px);
+    top: auto;
+    bottom: var(--bottom);
+    transform: none;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* 'prints gallery info' has to fit left of return down to a 320px wide phone */
+  .menu button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+    font-size: clamp(18px, 6vw, 22px);
+  }
+
+  .return {
+    right: var(--edge);
+    bottom: var(--bottom);
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 18px;
+  }
+}
+
+.gllry_title {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  padding-top: 8px;
+  color: #fff;
+  mix-blend-mode: difference;
+  font-size: clamp(12px, 1.4vw, 18px);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+
+.gllry_title.on {
+  opacity: 1;
+}
+
+/* the spun-round viewport. viewport.js sets the stage's perspective and the cam /
+   group transforms every frame; the stage only shows once the panel is in front */
+.vp_stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.vp_stage.on {
+  visibility: visible;
+}
+
+.vp_cam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.vp_group {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  /* the side stretches to the panel's height. it can't push the panel taller: its
+     description scrolls instead of growing, so the panel is always the taller one */
+  align-items: stretch;
+  gap: 28px;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  /* the group's own box is a flat plane in the same 3d space. the panel's right half
+     turns back behind it, so if the group took the pointer it would eat those clicks */
+  pointer-events: none;
+}
+
+.vp_panel,
+.vp_side {
+  pointer-events: auto;
+}
+
+.vp_panel {
+  display: flex;
+  flex-direction: column;
+  width: min(46vh, 36vw);
+  background: #fff;
+  border: 2px solid rgb(71, 71, 71);
+  /* turned off square: the right edge leans away from the camera */
+  transform: rotateY(10deg);
+  backface-visibility: hidden;
+}
+
+/* settled: no 3d chain above it any more, so the turn brings its own perspective,
+   the canvas focal length viewport.js hands down */
+.vp_stage.flat .vp_cam,
+.vp_stage.flat .vp_group {
+  transform-style: flat;
+}
+
+.vp_stage.flat .vp_panel {
+  transform: perspective(var(--vp-focal)) rotateY(10deg);
+}
+
+.vp_bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 2px solid rgb(71, 71, 71);
+  font-size: 14px;
+}
+
+.vp_bar button,
+.vp_side button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.vp_addr {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.vp_open {
+  color: inherit;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+/* square, whatever the page inside */
+.vp_body {
+  position: relative;
+  flex: none;
+  aspect-ratio: 1 / 1;
+  overflow: auto;
+}
+
+.vp_frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* an embed sized to its own reported height, scrolled by .vp_body */
+.vp_frame.vp_tall {
+  position: static;
+  display: block;
+}
+
+/* preloaded, waiting for its entry */
+.vp_frame.vp_parked {
+  visibility: hidden;
+}
+
+.vp_image {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
-.pet-container {
+/* a see-through card of the site's white, so the text reads over whatever the scene
+   has behind it. the blur only shows once the stage has settled flat */
+.vp_side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  width: min(20vw, 300px);
+  padding: 14px 16px;
+  background: rgba(252, 252, 255, 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  backface-visibility: hidden;
+  animation: vp_float 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes vp_float {
+  from { transform: translate3d(0, -6px, 0); }
+  to { transform: translate3d(0, 6px, 0); }
+}
+
+.vp_title {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 28px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+/* takes whatever height the side has left and scrolls past it, so every entry's
+   description fills the same box however long it is */
+.vp_desc {
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0;
+  padding-right: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  font-weight: normal;
+  font-size: clamp(13px, 1.2vw, 16px);
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+/* an entry's optional link, under its description */
+.vp_more {
+  align-self: flex-start;
+  color: inherit;
+  font-size: clamp(13px, 1.2vw, 16px);
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.vp_leave {
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: clamp(14px, 1.4vw, 18px);
+}
+
+.gh_list {
+  display: flex;
+  flex-direction: column;
+}
+
+.gh_note {
+  margin: 16px;
+  font-weight: normal;
+}
+
+.gh_repo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 0;
+  border-bottom: 1px solid rgb(220, 220, 224);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.gh_repo:hover {
+  background: rgb(255, 245, 200);
+}
+
+.gh_name {
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.gh_desc {
+  font-weight: normal;
+  font-size: 14px;
+}
+
+.gh_meta {
+  font-weight: normal;
+  font-size: 12px;
+  color: rgb(110, 110, 116);
+}
+
+.gh_file {
+  gap: 2px;
+  padding: 10px 16px;
+}
+
+.gh_file .gh_name {
+  font-size: 15px;
+}
+
+/* a repo's readme out of the snapshot */
+.repo_md {
+  padding: 4px 18px 18px;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.repo_md h1,
+.repo_md h2,
+.repo_md h3 {
+  margin: 18px 0 8px;
+  font-weight: bold;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.repo_md h1 { font-size: 22px; }
+.repo_md h2 { font-size: 18px; }
+.repo_md h3 { font-size: 15px; }
+
+.repo_md img {
+  max-width: 100%;
+}
+
+.repo_md a {
+  color: inherit;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.repo_md pre {
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: rgb(242, 242, 246);
+  overflow-wrap: normal;
+}
+
+.repo_md code,
+.repo_code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.repo_md :not(pre) > code {
+  padding: 1px 4px;
+  background: rgb(242, 242, 246);
+}
+
+/* one code file. as wide as its longest line, .vp_body scrolls both ways */
+.repo_code {
+  box-sizing: border-box;
+  min-width: 100%;
+  width: max-content;
+  min-height: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  font-weight: normal;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+/* highlight.js tokens in the site's colours: the toon shadow red, a dark gold for the
+   hover yellow, greys for the quiet stuff */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-built_in,
+.hljs-type {
+  color: rgb(214, 38, 66);
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-attr,
+.hljs-symbol {
+  color: rgb(160, 112, 0);
+}
+
+.hljs-number,
+.hljs-variable,
+.hljs-template-variable {
+  color: rgb(40, 96, 170);
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-selector-class,
+.hljs-selector-id {
+  font-weight: bold;
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: rgb(130, 130, 136);
+  font-style: italic;
+}
+
+/* tall screens: the description goes under the panel */
+@media (max-aspect-ratio: 1/1) {
+  .vp_group {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .vp_panel {
+    width: min(86vw, 52vh);
+  }
+
+  /* stacked under the panel there's no panel height to match, so it gets its own */
+  .vp_side {
+    width: 88vw;
+    height: 24vh;
+  }
+}
+
+/* the shop text, inside the building. scene1.js sets body.in_shop once the camera has
+   arrived; each line floats in after the one above it, and they all leave together */
+.shop {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 200px;
-  height: 200px;
-  z-index: 1000;
-  box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-  overflow: hidden;
-  transition: all 0.3s ease;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(420px, 40vw);
+  color: #fff;
+  mix-blend-mode: difference;
 }
 
-.pet-container:hover{
-  transform: scale(1.05);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+.shop h2 {
+  margin: 0 0 14px;
+  font-size: clamp(20px, 2.4vw, 32px);
+  letter-spacing: -0.02em;
 }
 
-.pet-container iframe{
-  width: 100%;
-  height: 100%;
-  border: none;
+.shop p {
+  margin: 0 0 12px;
+  font-weight: normal;
+  font-size: clamp(13px, 1.2vw, 16px);
+  line-height: 1.4;
 }
 
-.sidebar{
-  width: 18%;
+.shop a {
+  color: inherit;
+  font-weight: bold;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
+}
+
+.shop > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s var(--ease), transform 0.8s var(--ease);
+}
+
+body.in_shop .shop > * {
+  opacity: 1;
+  transform: translateY(0);
+  transition-duration: 1s;
+}
+
+body.in_shop .shop a {
+  pointer-events: auto;
+}
+
+body.in_shop .shop > :nth-child(2) { transition-delay: 0.15s; }
+body.in_shop .shop > :nth-child(3) { transition-delay: 0.3s; }
+body.in_shop .shop > :nth-child(4) { transition-delay: 0.45s; }
+body.in_shop .shop > :nth-child(5) { transition-delay: 0.6s; }
+body.in_shop .shop > :nth-child(6) { transition-delay: 0.75s; }
+
+/* the prints wall, right of the prints text and left of the nav. same float in as the
+   text, a beat behind it. thumbs keep one height and wrap, like a gallery wall */
+.prints {
+  position: fixed;
+  left: calc(48px + min(420px, 40vw));
+  right: 160px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  flex-direction: column;
-  box-shadow: 3px 0 15px rgba(0,0,0,0.5);
-  background-color: rgb(172,172,175);
-  padding: 10px;
-  margin-right: 25px;
-}
-.sidebar *{
-  background-color: rgb(172,172,175);
-  background: rgb(172,172,175);
-  color: white;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
 }
 
-.section{
-  margin-bottom: 25px;
-}
-.section-title{
-  font-size: 16px;
-  font-weight: 600;
-}
-.controls{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 15px;
-}
-.control-btn{
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-.control-btn:hover{
+.print {
+  padding: 0;
+  border: 2px solid rgb(71, 71, 71);
+  background: #fff;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s var(--ease), transform 0.8s var(--ease), border-color 0.2s;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
 }
 
-
-/**/
-
-/* phones */
-/* iphone 12/13 */
-@media only screen and (min-width: 980px) and (max-width: 1000px) and (min-height:1600px){
-  .sketch-container{
-    display: inline-block;
-    align-content: center;
-    justify-content: center;
-  }
-  .canvas-container{
-    min-width: 300px;
-    max-width: 750px;
-    aspect-ratio:1;
-    position: relative;
-  }
-  a {
-    font-size: 3em;
-  }
-}
-
-/* desktops */
-/* default */
-@media (min-width:1000px){
-  .sketch-container{
-    display: flex;
-    align-content: center;
-    justify-content: center;
-  }
-  .canvas-container{
-    min-width: 300px;
-    max-width: 300px;
-    aspect-ratio: 1;
-    position: relative;
-  }
-
-  #canvas-container-dimensionality{
-    flex: 1 1 1000px;
-    min-width: 1000px;
-    max-width: 1000px;
-    position: relative;
-  }
-
-  .content{
-    margin: auto;
-    display: flex;
-  }
-  .ani-bar{
-    font-size: 1.35em;
-    margin: 0;
-  }
-  button{
-    font-size: 1.36em;
-    transition: all 0.3s ease;
-    transform-style: preserve-3d;
-  }
-
-  button:hover:not(:disabled) {
-    transform: scale(1.05) translateZ(10px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  button:active:not(:disabled) {
-    transform: scale(0.98) translateZ(5px);
-  }
-}
-
-/* Drag and drop styling */
-.drop-zone {
-  cursor: pointer;
-  padding: 15px 20px;
-  border: 2px dashed rgba(255, 255, 255, 0.4);
-  border-radius: 8px;
-  transition: all 0.3s ease;
+.print img {
   display: block;
-  text-align: center;
-  margin: 10px 0;
+  height: clamp(110px, 24vh, 240px);
+  width: auto;
 }
 
-.drop-zone:hover {
-  border-color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+.print:hover {
+  border-color: rgb(255, 217, 25);
 }
 
-.drop-zone i {
-  display: inline-block;
-  transition: transform 0.3s ease;
-  margin-right: 8px;
+body.in_shop .print {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition-duration: 1s, 1s, 0.2s;
 }
 
-.drop-zone:hover i {
-  transform: translateY(-3px);
-  animation: bounce 0.6s ease-in-out infinite;
-}
+body.in_shop .print:nth-child(1) { transition-delay: 0.3s; }
+body.in_shop .print:nth-child(2) { transition-delay: 0.4s; }
+body.in_shop .print:nth-child(3) { transition-delay: 0.5s; }
+body.in_shop .print:nth-child(4) { transition-delay: 0.6s; }
+body.in_shop .print:nth-child(5) { transition-delay: 0.7s; }
 
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(-3px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-/* Random class centering */
-.random {
+/* one print, big, over everything. the site's white see-through, like the cards */
+.print_big {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 50vh;
-  width: 100%;
-  text-align: center;
+  background: rgba(252, 252, 255, 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease), visibility 0s 0.3s;
+  cursor: url('../../assets/cursors/link.cur'), pointer;
 }
 
-/*for shrunken desktop display*/
+.print_big.on {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.3s var(--ease);
+}
+
+.print_big img {
+  max-width: 90vw;
+  max-height: 86vh;
+  border: 2px solid rgb(71, 71, 71);
+  image-rendering: pixelated;
+}
+
+/* tall screens: the text sits low over the nav, the wall wraps into two rows under the
+   header, all of it on screen. one row height for every thumb, sized so the widest row
+   fits the width: epic3 (16:9) + engine (~1.22) is about 3 heights, plus the gap and
+   borders. the other row (hexswap3 3:2 + the two 3:10 strips) is narrower. the vh cap
+   keeps both rows clear of the text on short phones. after the desktop rules, so it wins */
+@media (max-aspect-ratio: 1/1) {
+  .shop {
+    left: var(--edge);
+    right: var(--edge);
+    top: auto;
+    bottom: calc(var(--bottom) + 64px);
+    width: auto;
+    transform: none;
+  }
+
+  .prints {
+    left: var(--edge);
+    right: var(--edge);
+    top: calc(var(--edge) + env(safe-area-inset-top) + var(--brand-size) + 44px);
+    transform: none;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .print img {
+    height: min(12vh, calc((100vw - 2 * var(--edge) - 20px) / 3.02));
+  }
+}
+
+/* the info copy waits out of sight until scene1 moves it into its card */
+body > .info {
+  display: none;
+}
+
+/* the info card is just text, so it's as tall as its text (this sits after the
+   portrait .vp_side height, so it wins) */
+.vp_side.info_card {
+  width: min(32vw, 460px);
+  height: auto;
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .vp_side.info_card {
+    width: 88vw;
+  }
+}
+
+.info p {
+  margin: 0;
+  font-weight: normal;
+  font-size: clamp(14px, 1.3vw, 18px);
+  line-height: 1.45;
+}
+
+/* mobile only (scene1.js MOBILE): sits over the spokes in the gallery, placed by js */
+.hint {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  display: none;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+}
+
+@media (max-aspect-ratio: 1/1), (hover: none) {
+  .hint {
+    display: block;
+  }
+
+  .hint.on {
+    opacity: 1;
+  }
+}
+
+#e {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  margin: 0;
+  color: #b00020;
+  font: 12px monospace;
+  white-space: pre-wrap;
+  pointer-events: none;
+}

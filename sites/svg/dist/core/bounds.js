@@ -1,0 +1,290 @@
+import { tVec2 } from '../util/svg_parser.js';
+import { Line } from '../util/draw_clickable_line.js';
+import { RWS, RHS } from './config.js';
+export class Bounds {
+    constructor() {
+        this.width = 0;
+        this.height = 0;
+    }
+    set_bounds(width, height) {
+        this.width = width;
+        this.height = height;
+    }
+    set_width(width) {
+        this.width = width;
+    }
+    set_height(height) {
+        this.height = height;
+    }
+    scale_to_bounds(pos, w_max, h_max) {
+        if (this.width && this.height) {
+            let _p = new tVec2(0, 0);
+            _p.x = (pos.x / w_max) * this.width;
+            _p.y = (pos.y / h_max) * this.height;
+            return _p;
+        }
+        else {
+            return new tVec2(0, 0);
+        }
+    }
+}
+export class MultiBounds extends Bounds {
+    constructor(row_div, col_div, width, height) {
+        super();
+        this.m_sub_bounds = [];
+        this.m_lines = [];
+        this.m_col_x = [];
+        this.m_row_y = [];
+        this.m_col_div = col_div;
+        this.m_row_div = row_div;
+        this.width = width;
+        this.height = height;
+        this._init_boundaries();
+        this._rebuild();
+    }
+    _init_boundaries() {
+        this.m_col_x = [];
+        this.m_row_y = [];
+        let cell_width = this.width / this.m_col_div;
+        let cell_height = this.height / this.m_row_div;
+        for (let j = 0; j <= this.m_col_div; j++)
+            this.m_col_x.push(j * cell_width);
+        for (let i = 0; i <= this.m_row_div; i++)
+            this.m_row_y.push(i * cell_height);
+    }
+    _rebuild() {
+        this._build_cells();
+        this._build_lines();
+    }
+    _build_cells() {
+        this.m_sub_bounds = [];
+        for (let i = 0; i < this.m_row_div; i++) {
+            for (let j = 0; j < this.m_col_div; j++) {
+                let cell = new Bounds();
+                cell.set_bounds(this.m_col_x[j + 1] - this.m_col_x[j], this.m_row_y[i + 1] - this.m_row_y[i]);
+                let pb = {
+                    box: cell,
+                    pos: new tVec2(this.m_col_x[j], this.m_row_y[i])
+                };
+                this.m_sub_bounds.push(pb);
+            }
+        }
+    }
+    _build_lines() {
+        this.m_lines = [];
+        let top = this.m_row_y[0];
+        let left = this.m_col_x[0];
+        let full_h = this.m_row_y[this.m_row_y.length - 1] - top;
+        let full_w = this.m_col_x[this.m_col_x.length - 1] - left;
+        // init first so rebuild can see outer edges. 
+        this.m_lines.push(new Line('vertical', left, full_h, 0, top));
+        this.m_lines.push(new Line('horizontal', top, full_w, 0, left));
+        for (let j = 1; j < this.m_col_x.length; j++) {
+            this.m_lines.push(new Line('vertical', this.m_col_x[j], full_h, j, this.m_row_y[0]));
+        }
+        for (let i = 1; i < this.m_row_y.length; i++) {
+            this.m_lines.push(new Line('horizontal', this.m_row_y[i], full_w, i, this.m_col_x[0]));
+        }
+    }
+    col_index(x) {
+        for (let j = 0; j < this.m_col_div; j++) {
+            if (x < this.m_col_x[j + 1])
+                return j;
+        }
+        return this.m_col_div - 1;
+    }
+    row_index(y) {
+        for (let i = 0; i < this.m_row_div; i++) {
+            if (y < this.m_row_y[i + 1])
+                return i;
+        }
+        return this.m_row_div - 1;
+    }
+    cell_index_at(x, y) {
+        return this.row_index(y) * this.m_col_div + this.col_index(x);
+    }
+    move_handle(handle, pos, strategy) {
+        if (handle.kind === 'base') {
+            let target = handle.axis === 'vertical' ? pos.x : pos.y;
+            this.move_boundary(handle.axis, handle.index, target, strategy);
+        }
+    }
+    move_boundary(axis, index, target, strategy) {
+        if (axis === 'vertical') {
+            strategy.apply(this.m_col_x, index, target);
+        }
+        else {
+            strategy.apply(this.m_row_y, index, target);
+        }
+        this._rebuild();
+    }
+    get_state() {
+        return this.m_col_x.concat(this.m_row_y);
+    }
+    set_state(state) {
+        let nc = this.m_col_div + 1;
+        this.m_col_x = state.slice(0, nc);
+        this.m_row_y = state.slice(nc, nc + this.m_row_div + 1);
+        this._rebuild();
+    }
+}
+export class RecurseBounds extends MultiBounds {
+    constructor(row_div, col_div, width, height, depth) {
+        super(row_div, col_div, width, height); // base uniform grid of cells
+        this.m_fracs = []; // [base cell index][depth] -- the editable corner cuts
+        this.m_depth = depth;
+    }
+    _rebuild() {
+        super._rebuild();
+        if (this.m_depth === undefined)
+            return; // still inside super()'s ctor
+        this._ensure_fracs();
+        let base = this.m_sub_bounds;
+        let leaves = [];
+        for (let ci = 0; ci < base.length; ci++) {
+            let c = base[ci];
+            this._descend({ x: c.pos.x, y: c.pos.y, w: c.box.width, h: c.box.height }, ci, 0, leaves);
+        }
+        this.m_sub_bounds = leaves;
+    }
+    _ensure_fracs() {
+        if (this.m_fracs.length === this.m_sub_bounds.length)
+            return;
+        this.m_fracs = this.m_sub_bounds.map(() => {
+            let arr = [];
+            for (let d = 0; d < this.m_depth; d++) {
+                let f = this.default_frac();
+                arr.push({ fx: f.fx, fy: f.fy });
+            }
+            return arr;
+        });
+    }
+    _descend(cell, base_cell, depth, leaves) {
+        if (depth >= this.m_depth) {
+            leaves.push(this._leaf(cell));
+            return;
+        }
+        let s = this.split_cell(cell, this.m_fracs[base_cell][depth]);
+        for (const ln of s.lines)
+            ln.handle = { kind: 'recurse', axis: ln.axis, index: base_cell, depth };
+        this.m_lines.push(...s.lines);
+        for (const r of s.leaves)
+            leaves.push(this._leaf(r));
+        this._descend(s.corner, base_cell, depth + 1, leaves);
+    }
+    _leaf(r) {
+        let box = new Bounds();
+        box.set_bounds(r.w, r.h);
+        return { box, pos: new tVec2(r.x, r.y) };
+    }
+    _base_cell_rect(cell) {
+        let col = cell % this.m_col_div;
+        let row = Math.floor(cell / this.m_col_div);
+        return {
+            x: this.m_col_x[col], y: this.m_row_y[row],
+            w: this.m_col_x[col + 1] - this.m_col_x[col],
+            h: this.m_row_y[row + 1] - this.m_row_y[row]
+        };
+    }
+    _node_rect(cell, depth) {
+        let rect = this._base_cell_rect(cell);
+        for (let d = 0; d < depth; d++)
+            rect = this.split_cell(rect, this.m_fracs[cell][d]).corner;
+        return rect;
+    }
+    move_handle(handle, pos, strategy) {
+        if (handle.kind !== 'recurse') {
+            super.move_handle(handle, pos, strategy);
+            return;
+        }
+        let rect = this._node_rect(handle.index, handle.depth);
+        let size = handle.axis === 'vertical' ? rect.w : rect.h;
+        let lo = strategy.min_gap / size, hi = 1 - strategy.min_gap / size;
+        if (lo > hi) {
+            lo = 0.05;
+            hi = 0.95;
+        } // cell too small to honour min_gap
+        let f = Math.max(lo, Math.min(hi, this.frac_from_drag(rect, handle.axis, pos)));
+        let frac = this.m_fracs[handle.index][handle.depth];
+        if (handle.axis === 'vertical')
+            frac.fx = f;
+        else
+            frac.fy = f;
+        this._rebuild();
+    }
+    cell_index_at(x, y) {
+        for (let i = 0; i < this.m_sub_bounds.length; i++) {
+            let c = this.m_sub_bounds[i];
+            if (x >= c.pos.x && x < c.pos.x + c.box.width && y >= c.pos.y && y < c.pos.y + c.box.height)
+                return i;
+        }
+        return 0;
+    }
+    get_state() {
+        let flat = super.get_state();
+        for (const cell of this.m_fracs) {
+            for (const f of cell) {
+                flat.push(f.fx, f.fy);
+            }
+        }
+        return flat;
+    }
+    set_state(state) {
+        let nc = this.m_col_div + 1;
+        let nr = this.m_row_div + 1;
+        this.m_col_x = state.slice(0, nc);
+        this.m_row_y = state.slice(nc, nc + nr);
+        let i = nc + nr;
+        for (const cell of this.m_fracs) {
+            for (const f of cell) {
+                f.fx = state[i++];
+                f.fy = state[i++];
+            }
+        }
+        this._rebuild();
+    }
+}
+export var corner;
+(function (corner) {
+    corner[corner["TOP_LEFT"] = 0] = "TOP_LEFT";
+    corner[corner["TOP_RIGHT"] = 1] = "TOP_RIGHT";
+    corner[corner["BOTTOM_LEFT"] = 2] = "BOTTOM_LEFT";
+    corner[corner["BOTTOM_RIGHT"] = 3] = "BOTTOM_RIGHT";
+})(corner || (corner = {}));
+export class RecurseCorner extends RecurseBounds {
+    constructor(row_div, col_div, width, height, depth, c, scalar_width = RWS, scalar_height = RHS) {
+        super(row_div, col_div, width, height, depth);
+        this.m_corner = c;
+        this.m_scale_w = Math.min(RWS, scalar_width);
+        this.m_scale_h = Math.min(RHS, scalar_height);
+        this._rebuild(); // fields are set now -- see the RecurseBounds note
+    }
+    default_frac() { return { fx: this.m_scale_w, fy: this.m_scale_h }; }
+    _left() { return this.m_corner === corner.TOP_LEFT || this.m_corner === corner.BOTTOM_LEFT; }
+    _top() { return this.m_corner === corner.TOP_LEFT || this.m_corner === corner.TOP_RIGHT; }
+    split_cell(cell, frac) {
+        let cw = cell.w * frac.fx;
+        let ch = cell.h * frac.fy;
+        let left = this._left(), top = this._top();
+        let l = cell.x, r = cell.x + cell.w, t = cell.y, b = cell.y + cell.h;
+        let cutx = left ? l + cw : r - cw;
+        let cuty = top ? t + ch : b - ch;
+        let q = (x0, x1, y0, y1) => ({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+        let lt = q(l, cutx, t, cuty), rt = q(cutx, r, t, cuty);
+        let lb = q(l, cutx, cuty, b), rb = q(cutx, r, cuty, b);
+        let corner_piece = left ? (top ? lt : lb) : (top ? rt : rb);
+        let leaves = [lt, rt, lb, rb].filter(rect => rect !== corner_piece);
+        let lines = [
+            new Line('vertical', cutx, cell.h, -1, cell.y),
+            new Line('horizontal', cuty, cell.w, -1, cell.x)
+        ];
+        return { corner: corner_piece, leaves, lines };
+    }
+    frac_from_drag(cell, axis, pos) {
+        if (axis === 'vertical') {
+            return this._left() ? (pos.x - cell.x) / cell.w : (cell.x + cell.w - pos.x) / cell.w;
+        }
+        return this._top() ? (pos.y - cell.y) / cell.h : (cell.y + cell.h - pos.y) / cell.h;
+    }
+}
+//# sourceMappingURL=bounds.js.map

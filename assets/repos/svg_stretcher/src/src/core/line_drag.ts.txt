@@ -1,0 +1,76 @@
+import { tVec2 } from '../util/svg_parser.js';
+import { LineHandle } from '../util/draw_clickable_line.js';
+import { MultiBounds } from './bounds.js';
+import { ResizeStrategy } from './stretch_bounds.js';
+
+export class LineDragger {
+  m_svg: SVGSVGElement;
+  m_grid: MultiBounds;
+  m_origin: tVec2;
+  strategy: ResizeStrategy;
+  on_resize: () => void;   
+  m_hit_threshold: number;   // grid units
+  m_handle: LineHandle | null = null;
+
+  constructor(svg: SVGSVGElement, grid: MultiBounds, origin: tVec2, strategy: ResizeStrategy, hit_threshold: number, on_resize: () => void){
+    this.m_svg = svg;
+    this.m_grid = grid;
+    this.m_origin = origin;
+    this.strategy = strategy;
+    this.m_hit_threshold = hit_threshold;
+    this.on_resize = on_resize;
+    this.m_svg.addEventListener('mousedown', this._on_down);
+    this.m_svg.addEventListener('mousemove', this._on_hover);
+  }
+
+  set_strategy(strategy: ResizeStrategy): void{ this.strategy = strategy; }
+
+  dispose(): void{
+    this.m_svg.removeEventListener('mousedown', this._on_down);
+    this.m_svg.removeEventListener('mousemove', this._on_hover);
+  }
+
+  _to_grid(ev: MouseEvent): tVec2{
+    let ctm = this.m_svg.getScreenCTM();
+    if(!ctm) return new tVec2(0, 0);
+    let p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(ctm.inverse());
+    return new tVec2(p.x - this.m_origin.x, p.y - this.m_origin.y);
+  }
+
+  _pick(pos: tVec2): LineHandle | null{
+    for(const line of this.m_grid.m_lines){
+      if(line.hit_test(pos, this.m_hit_threshold)){
+        return line.handle ?? { kind: 'base', axis: line.axis, index: line.index, depth: 0 };
+      }
+    }
+    return null;
+  }
+
+  _on_down = (ev: MouseEvent): void => {
+    let handle = this._pick(this._to_grid(ev));
+    if(!handle) return;
+    this.m_handle = handle;
+    window.addEventListener('mousemove', this._on_drag);
+    window.addEventListener('mouseup', this._on_up);
+    ev.preventDefault();
+  };
+
+  _on_drag = (ev: MouseEvent): void => {
+    if(!this.m_handle) return;
+    this.m_grid.move_handle(this.m_handle, this._to_grid(ev), this.strategy);
+    this.on_resize();
+  };
+
+  _on_up = (): void => {
+    this.m_handle = null;
+    window.removeEventListener('mousemove', this._on_drag);
+    window.removeEventListener('mouseup', this._on_up);
+  };
+
+  _on_hover = (ev: MouseEvent): void => {
+    if(this.m_handle) return;
+    let handle = this._pick(this._to_grid(ev));
+    this.m_svg.style.cursor = handle?.axis === 'vertical' ? 'col-resize'
+      : handle?.axis === 'horizontal' ? 'row-resize' : 'default';
+  };
+}

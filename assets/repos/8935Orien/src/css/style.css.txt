@@ -1,0 +1,743 @@
+@font-face {
+  font-family: 'Tekit';
+  src: url('../assets/tekit.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ------------------------------------------------
+   Reset & Base
+   ------------------------------------------------ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: clamp(14px, 1.1vw, 28px);
+  -webkit-text-size-adjust: 100%;
+  --border-width: clamp(3px, 0.25vw, 6px);
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fff;
+  perspective: 1000px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ------------------------------------------------
+   Top Bar
+   ------------------------------------------------ */
+#topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  height: 84px;
+  gap: 1.5rem;
+}
+
+.topbar-logo {
+  flex-shrink: 0;
+}
+
+.topbar-logo img {
+  height: 52px;
+  width: auto;
+  display: block;
+}
+
+.topbar-links {
+  display: flex;
+  gap: 2rem;
+  margin-left: auto;
+}
+
+.topbar-links a {
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+
+.topbar-links a:hover {
+  opacity: 0.6;
+}
+
+/* phone — shown only on mobile */
+.topbar-phone-mobile {
+  display: none;
+}
+
+/* hamburger — hidden on desktop */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------
+   Main Content
+   ------------------------------------------------ */
+#content {
+  display: flex;
+  padding: 2rem 1.5rem;
+  padding-top: 0;
+  align-items: stretch;
+}
+
+/* ------------------------------------------------
+   Sidebar
+   ------------------------------------------------ */
+#sidebar {
+  width: 30%;
+  flex-shrink: 0;
+  padding: 1.5rem;
+  border: var(--border-width) solid #000;
+  margin-right: 1.5rem;
+  position: relative;
+}
+
+.sidebar-inner {
+  position: sticky;
+  top: calc(50vh - 84px);
+  transform: translateY(-50%);
+}
+
+.sidebar-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+.sidebar-contact a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #555;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-contact a:hover {
+  opacity: 0.6;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sidebar-link {
+  display: block;
+  padding: 0.6rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  transition: opacity 0.15s ease;
+  color: hsl(0, 0%, calc(var(--lightness, 0) * 1%));
+}
+
+.sidebar-link:first-child {
+  border-top: 1px solid #e0e0e0;
+}
+
+.sidebar-link {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
+}
+
+.sidebar-link:hover {
+  transform: scale(1.08);
+  box-shadow: 4px 4px 0px hsl(0, 0%, calc(var(--lightness, 0) * 1%));
+}
+
+.main-area {
+  width: 70%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-self: flex-start;
+}
+
+.main-area > * {
+  flex: 0 0 auto;
+  border: var(--border-width) solid #000;
+  padding: 1.5rem;
+}
+
+/* ------------------------------------------------
+   Hero / Building Image Container
+   ------------------------------------------------ */
+.canvas-container {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  border: var(--border-width) solid #000;
+  padding: 0;
+  height: clamp(340px, 55vh, 680px);
+}
+
+.canvas-container img.hero-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.canvas-banner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2rem 2rem 1.5rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.canvas-banner h1 {
+  font-size: clamp(1.4rem, 3vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.canvas-banner .banner-sub {
+  font-size: clamp(0.75rem, 1.2vw, 1.1rem);
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.canvas-banner .banner-offer {
+  display: inline-block;
+  font-size: clamp(0.7rem, 1vw, 0.95rem);
+  font-weight: 700;
+  color: #fff;
+  background: #000;
+  padding: 0.25em 0.6em;
+  margin-top: 0.3rem;
+  letter-spacing: 0.02em;
+  align-self: flex-start;
+}
+
+/* ------------------------------------------------
+   Sections
+   ------------------------------------------------ */
+.section {
+  transform-origin: center center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  scroll-margin-top: 100px;
+  /* Scale with viewport so sections fill the screen proportionally */
+  min-height: clamp(160px, 26vh, 420px);
+}
+
+.section.expanded,
+.section.collapsing {
+  cursor: default;
+}
+
+.section.expanded {
+  position: absolute;
+  width: 74vw;
+  height: 74vh;
+  left: 13vw;
+  /* top is set by JS: scrollY + 13% of viewport */
+  z-index: 2000;
+  background: #fff;
+  overflow: hidden !important;
+  border: var(--border-width) solid #000;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  animation: section-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.section.collapsing {
+  position: absolute;
+  width: 74vw;
+  height: 74vh;
+  left: 13vw;
+  z-index: 2000;
+  background: #fff;
+  overflow: hidden !important;
+  border: var(--border-width) solid #000;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  animation: section-pop-out 0.3s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes section-pop-in {
+  0% {
+    transform: translateZ(0) scale(0.3);
+    opacity: 0;
+  }
+  100% {
+    transform: translateZ(200px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes section-pop-out {
+  0% {
+    transform: translateZ(200px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateZ(0) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.section-title {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.section-title:hover {
+  transform: scale(1.05);
+}
+
+.section-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: var(--border-width) solid #000;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a1a;
+  transition: background 0.15s ease;
+  line-height: 1;
+  z-index: 100;
+}
+
+.section-close:hover {
+  background: #000;
+  color: #fff;
+}
+
+.section-popout-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0);
+  z-index: 1999;
+  animation: overlay-fade-in 0.4s ease forwards;
+}
+
+.section-popout-overlay.fading-out {
+  animation: overlay-fade-out 0.3s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes overlay-fade-in {
+  0% { background: rgba(0, 0, 0, 0); }
+  100% { background: rgba(0, 0, 0, 0.6); }
+}
+
+@keyframes overlay-fade-out {
+  0% { background: rgba(0, 0, 0, 0.6); }
+  100% { background: rgba(0, 0, 0, 0); }
+}
+
+/* ------------------------------------------------
+   Section Inner Content
+   ------------------------------------------------ */
+.section-content {
+  margin-top: 1.5rem;
+}
+
+.section-content p {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.section-content ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.section-content ul li {
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.pricing-card {
+  border: var(--border-width) solid #000;
+  padding: 1.25rem 1rem;
+}
+
+.pricing-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.pricing-card .price {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.pricing-card .price-sub {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.contact-block {
+  margin-top: 1.5rem;
+}
+
+.contact-block p {
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
+}
+
+.contact-block a {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.special-badge {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4em 0.8em;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+/* fade-out above the phone bar in collapsed sections to hint at more content */
+.section:not(.expanded):not(.collapsing) .section-phone::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: 7rem;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 65%, rgba(255,255,255,1) 100%);
+  pointer-events: none;
+}
+
+/* black line on top of the gradient, flush above the phone bar */
+.section:not(.expanded):not(.collapsing) .section-phone::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: var(--border-width);
+  background: #000;
+}
+
+/* ------------------------------------------------
+   Section Phone — white bar pinned to the bottom, nothing bleeds past it
+   ------------------------------------------------ */
+.section-phone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 1.5rem;
+  background: #fff;
+  border-top: clamp(5px, 0.45vw, 9px) solid #000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  z-index: 3;
+}
+
+.section-phone a {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+/* In expanded state: flex child, flush at the bottom, content scrolls above it */
+.section.expanded .section-title {
+  flex-shrink: 0;
+}
+
+.section.expanded .section-content,
+.section.expanded .gallery-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  margin-top: 1.5rem;
+}
+
+.section.expanded .section-phone {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  margin-bottom: -2rem;
+  padding: 0.55rem 2rem;
+}
+
+
+/* ------------------------------------------------
+   Gallery Carousel
+   ------------------------------------------------ */
+#gallery {
+  overflow: hidden;
+  padding: 1.5rem;
+  height: clamp(300px, 50vh, 600px);
+  min-height: unset;
+}
+
+.gallery-carousel {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+}
+
+/* dim carousel slightly so the title stays readable */
+.gallery-carousel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+}
+
+/* title sits above carousel */
+#gallery .section-title {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* when expanded/collapsing: hide carousel, restore title color */
+.section.expanded .gallery-carousel,
+.section.collapsing .gallery-carousel {
+  display: none;
+}
+
+#gallery.expanded .section-title,
+#gallery.collapsing .section-title {
+  color: inherit;
+  text-shadow: none;
+}
+
+/* ------------------------------------------------
+   Gallery Expanded Grid + Lightbox
+   ------------------------------------------------ */
+.gallery-content {
+  display: none;
+}
+
+.section.expanded .gallery-content {
+  display: block;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.gallery-thumb {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border: var(--border-width) solid #000;
+  cursor: zoom-in;
+  transition: opacity 0.15s ease;
+  display: block;
+  max-width: none;
+}
+
+.gallery-thumb:hover {
+  opacity: 0.82;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  animation: overlay-fade-in 0.2s ease forwards;
+}
+
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  display: block;
+  border: var(--border-width) solid #fff;
+}
+
+/* ------------------------------------------------
+   Footer
+   ------------------------------------------------ */
+#footer {
+  padding: 2rem 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* ------------------------------------------------
+   Mobile  (<768px)
+   ------------------------------------------------ */
+@media (max-width: 768px) {
+  /* Expanded panel: near full-width on mobile, top set by JS */
+  .section.expanded,
+  .section.collapsing {
+    width: calc(100vw - 2rem);
+    height: 78vh;
+    left: 1rem;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .topbar-phone-mobile {
+    display: block;
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .topbar-links {
+    display: none;
+    flex-direction: column;
+    margin-left: 0;
+    position: absolute;
+    top: 84px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    gap: 1rem;
+  }
+
+  .topbar-links.open {
+    display: flex;
+  }
+
+  #content {
+    flex-direction: column;
+  }
+
+  #sidebar {
+    display: none;
+  }
+
+  .main-area {
+    width: 100%;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,85 @@
+/* use this style sheet for landing page... */
+/**/
+*{
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: rgb(252,252,255);
+  background: rgb(252,252,255);
+}
+
+a{
+  font-family: 'Times New Roman', serif;
+}
+h2 a{
+  font-family: Arial, Helvetica, sans-serif;
+  text-decoration: underline;
+  color: blue;
+}
+
+body{
+  background-color: rgb(252,252,255);
+  background: rgb(252,252,255);
+}
+
+.sketch-container{
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+}
+
+.canvas-container{
+  flex: 1 1 100px;
+  min-width: 100px;
+  max-width: 100px;
+  aspect-ratio: 1;
+  position: relative;
+}
+
+.canvas-container canvas{
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  object-fit: contain;
+}
+.gallery-wrapper{
+  display: flex;
+  flex-wrap: wrap;
+}
+.gallery-item{
+  display: flex;
+}
+.gallery-item h2{
+}
+/**/
+
+/* phones */
+/* iphone 12/13 */
+@media only screen and (min-width: 980px) and (max-width: 1000px) and (min-height:1600px){
+  .sketch-container{
+    display: inline-block;
+    align-content: center;
+    justify-content: center;
+  }
+  .canvas-container{
+    min-width: 300px;
+    max-width: 750px;
+    aspect-ratio:1;
+    position: relative;
+  }
+}
+
+/* desktops */
+/* default */
+@media (min-width:1000px){
+  .sketch-container{
+    display: flex;
+    align-content: center;
+    justify-content: center;
+  }
+  .canvas-container{
+    min-width: 100px;
+    max-width: 100px;
+    aspect-ratio: 1;
+    position: relative;
+  }
+}

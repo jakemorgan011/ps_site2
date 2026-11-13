@@ -1,0 +1,203 @@
+[
+  {
+    "name": "untitled_rendering_engine",
+    "full_name": "jakemorgan011/untitled_rendering_engine",
+    "description": null,
+    "language": "JavaScript",
+    "fork": false,
+    "updated": "2026-11-05",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [],
+    "files": []
+  },
+  {
+    "name": "svg_stretcher",
+    "full_name": "jakemorgan011/svg_stretcher",
+    "description": null,
+    "language": "TypeScript",
+    "fork": false,
+    "updated": "2026-11-02",
+    "branch": "main",
+    "readme": null,
+    "images": [],
+    "files": [
+      "index.html",
+      "package.json",
+      "src/core/bounds.ts",
+      "src/core/config.ts",
+      "src/core/divide_path.ts",
+      "src/core/line_drag.ts",
+      "src/core/main.ts",
+      "src/core/move_point.ts",
+      "src/core/save_slots.ts",
+      "src/core/stretch_bounds.ts",
+      "src/util/download_svg.ts",
+      "src/util/draw_clickable_line.ts",
+      "src/util/fit_scale.ts",
+      "src/util/svg_parser.ts",
+      "style.css",
+      "tsconfig.json"
+    ]
+  },
+  {
+    "name": "algo_hex",
+    "full_name": "jakemorgan011/algo_hex",
+    "description": "algorithmic nibble swapping for hex code format",
+    "language": "C++",
+    "fork": false,
+    "updated": "2026-10-18",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [
+      "show_a.png"
+    ],
+    "files": []
+  },
+  {
+    "name": "jakemorgan011",
+    "full_name": "jakemorgan011/jakemorgan011",
+    "description": "Config files for my GitHub profile.",
+    "language": null,
+    "fork": false,
+    "updated": "2026-09-30",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [],
+    "files": []
+  },
+  {
+    "name": "CoopClaude",
+    "full_name": "jakemorgan011/CoopClaude",
+    "description": "i don't like vibe coding so i vibe coded a tool to not vibe code",
+    "language": "Lua",
+    "fork": false,
+    "updated": "2026-09-28",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [],
+    "files": []
+  },
+  {
+    "name": "calarts-bfa-thesis",
+    "full_name": "jakemorgan011/calarts-bfa-thesis",
+    "description": null,
+    "language": "JavaScript",
+    "fork": false,
+    "updated": "2026-07-06",
+    "branch": "main",
+    "readme": null,
+    "images": [],
+    "files": [
+      "index.html",
+      "package.json",
+      "src/main.js"
+    ]
+  },
+  {
+    "name": "8935Orien",
+    "full_name": "jakemorgan011/8935Orien",
+    "description": "web-host for 8935 Orien building.",
+    "language": "CSS",
+    "fork": false,
+    "updated": "2026-05-20",
+    "branch": "test",
+    "readme": null,
+    "images": [],
+    "files": [
+      "css/style.css",
+      "index.html",
+      "js/main.js"
+    ]
+  },
+  {
+    "name": "Creative-Coding-Geometry-and-OpenGL-with-Audio",
+    "full_name": "jakemorgan011/Creative-Coding-Geometry-and-OpenGL-with-Audio",
+    "description": "Welcome! Here's some more technical in depth examples of how this whole system works.",
+    "language": "C++",
+    "fork": false,
+    "updated": "2025-12-10",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [
+      "assets/horse.png"
+    ],
+    "files": []
+  },
+  {
+    "name": "ps_site2",
+    "full_name": "jakemorgan011/ps_site2",
+    "description": "revamping my website to be good...",
+    "language": "JavaScript",
+    "fork": false,
+    "updated": "2025-11-11",
+    "branch": "main",
+    "readme": null,
+    "images": [],
+    "files": [
+      "bio.html",
+      "dimensionality.html",
+      "gallery.html",
+      "index.html",
+      "src/css/style.css",
+      "src/gallery/src/css/style.css",
+      "src/gallery/src/js/sketch.js",
+      "src/glsl/toon.frag",
+      "src/glsl/toon.vert",
+      "src/js/drag_drop.js",
+      "src/js/mesh_fingerprinting.js",
+      "src/js/p_animate.js",
+      "src/js/random_css.js",
+      "src/js/sketch.js",
+      "src/js/sketch2.js"
+    ]
+  },
+  {
+    "name": "jakemorgan-xyz",
+    "full_name": "jakemorgan011/jakemorgan-xyz",
+    "description": "a port of my personal website for professional use.",
+    "language": "JavaScript",
+    "fork": false,
+    "updated": "2025-11-09",
+    "branch": "main",
+    "readme": null,
+    "images": [],
+    "files": [
+      "dimensionality.html",
+      "gallery.html",
+      "index.html",
+      "src/css/style.css",
+      "src/gallery/src/css/style.css",
+      "src/gallery/src/js/sketch.js",
+      "src/glsl/toon.frag",
+      "src/glsl/toon.vert",
+      "src/js/p_animate.js",
+      "src/js/sketch.js",
+      "src/js/sketch2.js"
+    ]
+  },
+  {
+    "name": "noise_forces",
+    "full_name": "jakemorgan011/noise_forces",
+    "description": "little app to generate pink noise with filters that correspond to bouncing balls",
+    "language": "C++",
+    "fork": false,
+    "updated": "2025-05-14",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [],
+    "files": []
+  },
+  {
+    "name": "racecar",
+    "full_name": "jakemorgan011/racecar",
+    "description": "the modern version of _console. ",
+    "language": "C++",
+    "fork": false,
+    "updated": "2025-04-22",
+    "branch": "main",
+    "readme": "README.md",
+    "images": [],
+    "files": []
+  }
+]

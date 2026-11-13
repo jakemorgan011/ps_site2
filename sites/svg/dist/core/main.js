@@ -1,0 +1,154 @@
+import { SVG, tVec2 } from '../util/svg_parser.js';
+import { MultiBounds, RecurseCorner, corner } from './bounds.js';
+import { redraw_grid } from '../util/draw_clickable_line.js';
+import { PushResize } from './stretch_bounds.js';
+import { PointWarp } from './move_point.js';
+import { LineDragger } from './line_drag.js';
+import { SaveSlots } from './save_slots.js';
+import { download_svg } from '../util/download_svg.js';
+import { fit_scale } from '../util/fit_scale.js';
+import { FIT_FILL, MIN_GAP_PX, HIT_PX, GRID_COLS, GRID_ROWS, RECURSE_DEPTH, SVG_PATH, MORPH_MS } from './config.js';
+const svg = new SVG();
+await svg.load(SVG_PATH);
+const root = document.getElementById('svg-root');
+if (root)
+    root.innerHTML = svg.raw;
+const svg_el = root?.querySelector('svg') ?? null;
+if (svg_el) {
+    const vb = svg_el.viewBox.baseVal;
+    const scale = fit_scale(vb.width, vb.height, FIT_FILL);
+    svg_el.setAttribute('width', String(vb.width * scale));
+    svg_el.setAttribute('height', String(vb.height * scale));
+    let origin = new tVec2(vb.x, vb.y);
+    let ext_w = vb.width;
+    let ext_h = vb.height;
+    const strategy = new PushResize(MIN_GAP_PX / scale);
+    const pristine = svg.points.map(p => new tVec2(p.pos.x, p.pos.y));
+    const ORIGIN0 = new tVec2(vb.x, vb.y);
+    const EXT0 = { w: vb.width, h: vb.height };
+    const snap_points = () => svg.points.map(p => new tVec2(p.pos.x, p.pos.y));
+    const set_points = (pts) => svg.points.forEach((p, i) => p.set(new tVec2(pts[i].x, pts[i].y)));
+    const rewrite_paths = () => Array.from(svg_el.querySelectorAll('path')).forEach((p, i) => p.setAttribute('d', svg.to_path_d(i)));
+    let dragger = null;
+    const build_scene = (grid) => {
+        const warp = new PointWarp(svg.points, grid, origin);
+        const paths = Array.from(svg_el.querySelectorAll('path'));
+        const render = () => {
+            warp.apply(grid);
+            paths.forEach((p, i) => p.setAttribute('d', svg.to_path_d(i)));
+            redraw_grid(svg_el, grid.m_lines, origin);
+        };
+        dragger?.dispose();
+        dragger = new LineDragger(svg_el, grid, origin, strategy, HIT_PX / scale, () => { render(); note_edit(); });
+        render();
+        return { grid, render };
+    };
+    const current_box = () => {
+        let g = scene.grid;
+        let x0 = g.m_col_x[0], x1 = g.m_col_x[g.m_col_x.length - 1];
+        let y0 = g.m_row_y[0], y1 = g.m_row_y[g.m_row_y.length - 1];
+        return { x: origin.x + x0, y: origin.y + y0, w: x1 - x0, h: y1 - y0 };
+    };
+    const adopt_extent = () => {
+        let box = current_box();
+        origin = new tVec2(box.x, box.y);
+        ext_w = box.w;
+        ext_h = box.h;
+    };
+    const make_grid = () => new MultiBounds(GRID_ROWS, GRID_COLS, ext_w, ext_h);
+    const make_recurse = () => new RecurseCorner(GRID_ROWS, GRID_COLS, ext_w, ext_h, RECURSE_DEPTH, corner.TOP_LEFT);
+    const capture_config = () => {
+        let g = scene.grid;
+        return { is_recurse: g instanceof RecurseCorner, origin: new tVec2(origin.x, origin.y), ext_w, ext_h, state: g.get_state(), points: snap_points() };
+    };
+    let mode = 'modified';
+    let saved_working = null;
+    let anim = null;
+    const note_edit = () => { mode = 'modified'; saved_working = null; };
+    const animate_points = (to) => {
+        const from = snap_points();
+        if (anim !== null)
+            cancelAnimationFrame(anim);
+        const start = performance.now();
+        const tick = (now) => {
+            const t = Math.min(1, (now - start) / MORPH_MS);
+            const e = t * t * (3 - 2 * t); // smoothstep
+            svg.points.forEach((p, i) => p.set(new tVec2(from[i].x + (to[i].x - from[i].x) * e, from[i].y + (to[i].y - from[i].y) * e)));
+            rewrite_paths();
+            anim = t < 1 ? requestAnimationFrame(tick) : null;
+        };
+        anim = requestAnimationFrame(tick);
+    };
+    const transition = (build) => {
+        const from = snap_points();
+        build();
+        const to = snap_points();
+        set_points(from);
+        rewrite_paths();
+        animate_points(to);
+    };
+    const build_original = () => {
+        origin = new tVec2(ORIGIN0.x, ORIGIN0.y);
+        ext_w = EXT0.w;
+        ext_h = EXT0.h;
+        set_points(pristine);
+        scene = build_scene(make_grid()); // pristine points + fresh uniform grid = identity
+    };
+    const build_working = (w) => {
+        origin = new tVec2(w.origin.x, w.origin.y);
+        ext_w = w.ext_w;
+        ext_h = w.ext_h;
+        const grid = w.is_recurse ? make_recurse() : make_grid();
+        grid.set_state(w.state); // restore boundaries + recursive cuts
+        set_points(w.points); // art back at the working positions
+        scene = build_scene(grid); // bind working points to working grid = identity
+    };
+    const show_original = () => {
+        if (mode === 'original')
+            return;
+        saved_working = capture_config();
+        mode = 'original';
+        transition(build_original);
+    };
+    const load_config = (cfg) => {
+        mode = 'modified';
+        saved_working = null;
+        transition(() => build_working(cfg));
+    };
+    const show_modified = () => {
+        if (mode === 'modified' || !saved_working)
+            return;
+        let w = saved_working;
+        mode = 'modified';
+        transition(() => build_working(w));
+    };
+    const swap = (factory) => { adopt_extent(); scene = build_scene(factory()); note_edit(); };
+    let scene = build_scene(make_grid());
+    const on_click = (id, fn) => {
+        document.getElementById(id)?.addEventListener('click', fn);
+    };
+    on_click('btn-original', show_original);
+    on_click('btn-modified', show_modified);
+    on_click('btn-recurse', () => swap(make_recurse));
+    on_click('btn-grid', () => swap(make_grid));
+    on_click('btn-download', () => download_svg(svg_el, 'modified.svg', current_box(), scale));
+    const slots = new SaveSlots();
+    window.addEventListener('keydown', (ev) => {
+        if (ev.key === 's') {
+            console.log(`saved to slot ${slots.save(capture_config())}`);
+            return;
+        }
+        let cfg = slots.get_by_key(ev.key);
+        if (cfg)
+            load_config(cfg);
+    });
+    window.use_grid =
+        (g) => { scene = build_scene(g); };
+    window.RecurseCorner = RecurseCorner;
+    window.corner = corner;
+    window.grid = scene.grid;
+}
+console.log(`parsed ${svg.points.length} points`);
+console.table(svg.points.map(p => ({ type: p.type, x: p.pos.x, y: p.pos.y })));
+window.svg = svg;
+//# sourceMappingURL=main.js.map

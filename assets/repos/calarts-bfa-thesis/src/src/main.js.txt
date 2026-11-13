@@ -1,0 +1,311 @@
+import { prepareWithSegments, layoutNextLine } from '@chenglou/pretext';
+
+// only can use 'h1', 'h2', 'p', 'eq', 'eqrow', 'callout'
+const CONTENT = [
+  { type: 'h1', text: 'Exploring Latent Space in the Context of Geometry and Geometrical-Based Signal Processing.' },
+  { type: 'p',  text: 'This research investigates the use of a digital three-dimensional interface as a control surface for a signal processing chain, treating the manipulation of sound as a sculptor treats clay. The fundamental proposition is that geometric transformation can serve as a direct and meaningful analog for audio transformation.' },
+  { type: 'p',  text: 'The core hypothesis is as follows: an intuitive visual representation of the acoustic character of an object can be constructed such that geometric manipulation produces proportional signal processing change. Sharper, more irregular geometries correspond to sharper spectral treatments (e.g., distortion), while rounder, more uniform geometries correspond to smoother, low-variance signal processing algorithms.' },
+  { type: 'p',  text: 'Realizing a system of sufficient complexity while preserving intuitive control required substantial investment in the graphics development pipeline. Early prototypes employed p5.js\'s WebGL integration and subsequently JUCE\'s OpenGL bindings. In retrospect, applying an audio-first framework to a graphics-intensive application introduced unnecessary architectural constraints, well-suited for audio but limited in its capacity for high-fidelity geometric rendering.' },
+
+  { type: 'h2', text: 'Preceeding Works' },
+  { type: 'p',  text: 'Dimensionality. A primitive yet demonstrable approach to audio processing driven by three-dimensional geometry. The system allows users to upload arbitrary meshes, whereupon a backend analysis engine derives DSP chain parameters from the geometric attributes of the submitted shape. This first iteration constituted proof of concept: that visual attributes of three-dimensional objects could function as valid signal processing parameters. Numerous implementation deficiencies persist, but the core feasibility of the approach was confirmed.' },
+  { type: 'image', src: '/src/assets/dimensionality.png', alt: 'Dimensionality' },
+  { type: 'p',  text: 'Infinite Space. A VST3 plugin that uses three-dimensional spatial position as the primary control parameter. The depth axis (z) maps directly to apparent sonic distance: objects brought toward the viewing plane yield a proximal acoustic character; objects receding into depth yield a distal one. The remaining two spatial axes were deliberately assigned to signal processes unrelated to spatialization, introducing a dimension of open-ended, exploratory interaction.' },
+  { type: 'image', src: '/src/assets/infinitespace.png', alt: 'Infinite Space' },
+
+  { type: 'h2', text: 'Signal Processing in Infinite Space' },
+  { type: 'p',  text: 'The reverb at the core of Infinite Space is a Schroeder network: four parallel comb filters feeding into two series allpass filters. This architecture produces a dense, spectrally diffuse decay without the metallic coloration typical of simpler feedback delay structures. The spatial position of the mesh object is communicated from the rendering thread to the audio processor via atomic callbacks, making the geometric state available sample-accurately without locking.' },
+  { type: 'p',  text: 'Two of the three spatial axes are mapped directly to signal processing parameters. Mesh depth (z) governs apparent distance: closer objects produce a drier, more proximal character; receding objects increase wet signal and early reflection density. Rotation state, derived from the orientation of the mesh as the user manipulates it, modulates the timing of the allpass filters in the reverb tail. This introduces a subtle pitch-warble into the diffuse decay, not unlike tape flutter, that varies continuously with how the object is being handled. A bandpass filter applied across the full reverb output is controlled by the remaining spatial axis, sweeping the spectral center of the processed signal as the mesh moves laterally. The result is a small, tightly coupled set of geometric-to-acoustic mappings that remain legible to the performer without requiring any conventional interface.' },
+
+  { type: 'h2', text: 'Aesthetic' },
+  { type: 'p',  text: 'Creating by any means necessary. This principle underlies all recent work in this body of research, and is particularly central to this thesis. Approaching creation with no predetermined commitment to a specific medium, instead building from existing technical knowledge, has produced a set of tools that resist easy categorization. Tools as Art has emerged as the primary and most extensively developed discipline within this practice. The use of the screen as a creative surface is not novel. What remains underdeveloped is the treatment of the tool itself as the artifact. Commercial entities such as Xfer, FabFilter, Ableton, and Splice are structurally constrained to prioritize accessibility and operational efficiency, serving large user bases that require rapid onboarding. Operating outside those constraints, as an independent developer with no obligation to compete directly with those systems, enables a substantially wider design space for control paradigm exploration.' },
+  { type: 'p',  text: 'A deliberate effort to set aside accumulated aesthetic preferences revealed what arises organically from the practice. The result has been a recurring formal interest in small, isolated environments in which the user determines the operative purpose. These works possess functional utility as tools, but the immersive quality of their use generates a differentiated experience for each participant. Each tool is intentionally resistant to immediate comprehension.' },
+  { type: 'p',  text: 'They are not designed for high-throughput production contexts. They are, first and foremost, art.' },
+
+  { type: 'h2', text: 'The Foundation' },
+  { type: 'p',  text: 'Geometric rendering is handled via direct OpenGL calls. OpenGL is a cross-platform graphics API that routes rendering instructions to the GPU, offloading vertex processing that would otherwise constitute a significant burden on the CPU. At densities exceeding 10,000 vertices, where those vertices additionally serve as parameter sources for real-time signal processing, CPU-side rendering becomes computationally prohibitive. Delegating display and interactivity to the GPU via OpenGL resolves this bottleneck; at the scale of geometric complexity employed here, GPU-side processing is effectively trivial. This architectural decision is what makes the synchronization of geometric and audio computation tractable.' },
+  { type: 'p',  text: 'Parameterizing a three-dimensional object requires reduction of a high-dimensional vertex set to a set of scalar values. Perceptually, this reduction maps onto the language commonly used to describe shape: uniform, irregular, smooth, large, small, dense, spread. Formally, these descriptors correspond to well-defined statistical and geometric measures computable over a vertex array. The most analytically significant of these measures are: spread, variance, scale, bias, and density. Each normalized output constitutes a directly usable modulation source for the signal processing layer.' },
+  { type: 'p',  text: 'Each measure is defined as a function of the vertex matrix X, where X is a two-dimensional array in which each column encodes a single vertex and each row encodes the x, y, or z component of that vertex. This layout enables vertex data to be parsed as cascading XYZ tuples, minimizing per-sample processing overhead and maintaining structural consistency across meshes of varying resolution. The expressions used in the analysis engine are defined below.' },
+  { type: 'eq', tex: '\\sigma^2 = \\frac{1}{n} \\sum_{i=1}^{n} \\|\\mathbf{v}_i - \\mathbf{c}\\|^2', caption: 'Variance (per dimension)' },
+  { type: 'eq', tex: '\\mathbf{c} = \\frac{1}{n} \\sum_{i=1}^{n} \\mathbf{v}_i', caption: 'Centroid' },
+  { type: 'eq', tex: '\\Delta_d = \\max_i d_i - \\min_i d_i, \\quad d \\in \\{x, y, z\\}', caption: 'Spread (per axis)' },
+  { type: 'eq', tex: '\\Omega = |\\Delta_x \\cdot \\Delta_y \\cdot \\Delta_z|', caption: 'Volume' },
+  { type: 'eq', tex: 'P_d = \\{d_{\\pi(\\lfloor \\frac{k(n-1)}{m} \\rfloor)} \\mid k = 0,1,\\ldots,m\\}, \\quad d \\in \\{x, y, z\\}', caption: 'Axis profile (per axis)' },
+  { type: 'eq', tex: 'K = \\dfrac{\\sigma}{\\sqrt[3]{\\Omega}}', caption: 'Complexity' },
+  { type: 'p',  text: 'These expressions represent the boundary of analytical complexity viable within the technical constraints of the first system. No further measures could be meaningfully integrated at that stage of development.' },
+
+  { type: 'h2', text: 'The New System' },
+  { type: 'p',  text: 'Constructing a system for real-time geometric audio sculpting in a static environment proved architecturally untenable. The trajectory of that approach converged on problems already solved by dedicated three-dimensional modeling applications such as Blender and Maya. Embedding a full 3D modeling pipeline within an audio engine is neither appropriate nor efficient. The revised objective was to preserve exploratory interaction with three-dimensional control space while redirecting the development effort toward signal processing. This reorientation gave rise to the introduction of a fourth dimension, latent space, as a mechanism for navigating the three-dimensional audio control space.' },
+  { type: 'p',  text: 'At the outset of this project, familiarity with machine learning methods was minimal. The decision to introduce a latent dimension represented entry into largely uncharted territory. However, the capacity to dynamically generate new parametric spaces and perform high-speed interpolation across three-dimensional geometry made machine learning an approach that could not be set aside. It should be noted that this determination was reached heuristically rather than through prior theoretical knowledge.' },
+  { type: 'p',  text: 'Prior work in computational simulation, specifically systems in which surrounding objects exert force-based influence on the trajectory of other objects, suggested a natural extension into geometric space: the surrounding geometry should influence the output. From this baseline, a Multi-Layer Perceptron (MLP) was selected as the architectural foundation for this iteration of the system.' },
+  { type: 'p',  text: 'The system architecture is as follows. A network regresses a mesh of n vertices, each encoded as (x, y, z), onto a two-dimensional navigational coordinate (x, y) in latent space. Approximately 10,000 geometric degrees of freedom are thus governed by two continuous scalar parameters. To extend this further, specific coordinate positions in latent space are associated with known mesh configurations via a method termed anchoring. Anchoring n meshes at defined positions in the two-dimensional map produces a bounded but continuous space for interpolation. Two dimensions navigate it; three represent it.' },
+  { type: 'p',  text: 'Anchoring constitutes the central operational mechanism of the system. Each anchoring event functions as a localized training episode, constructing new latent space topology in response to the current geometric configuration.' },
+  { type: 'image', src: '/src/assets/anchoring-flowchart.png', alt: 'Anchoring flowchart', ratio: [2960, 958], contain: true },
+  { type: 'p',  text: 'The network employs a standard regressive MLP architecture. Analyzed from the perspective of a forward pass: the navigational vector (x, y) is introduced as a two-dimensional input tensor. It propagates through a sequence of linear transformations (matrix products) and rectified linear activation units, terminating at an output layer that produces an array of n vertices each with (x, y, z) coordinates. Notably, this network deliberately omits two elements considered foundational in conventional machine learning: a large training dataset and a held-out test set.' },
+  { type: 'p',  text: 'For readers approaching from a background in mathematics or computer science: the intentional violation of these conventions is the point.' },
+  { type: 'p',  text: 'Network weights are typically optimized by iterating over large datasets, computing prediction error, and applying gradient-based corrections via backpropagation. That mechanism is assumed here without elaboration. In this system, the training corpus consists of three to four user-provided meshes. Excessive iteration produces overfitting to the anchor configurations; insufficient iteration produces unstructured noise. Both phenomena are well-understood failure modes in supervised learning. In this context, however, the space between convergence and noise is not a failure state; it is the operative range. The system is designed to inhabit that boundary.' },
+  { type: 'p',  text: 'The constraint of a minimal dataset produced an emergent property that would not arise in a conventional training regime.' },
+  { type: 'callout', text: 'Unfiltered Exploration of Latent Space.' },
+  { type: 'p',  text: 'The observed results did not constitute high-fidelity generalization, nor did they reveal novel training methodologies with broad applicability to machine learning research. What was observed was more fundamental: the intermediate representational states of the network became directly perceptible. Layer interactions were visible. Prediction error manifested in real time. The learning dynamics of the model, how weights adjusted and why, became legible through the geometric output. The noise was structured. It was shaped by the anchored objects surrounding it.' },
+
+  { type: 'h2', text: 'Display' },
+  { type: 'p',  text: 'The generative component described above constitutes only one subsystem of the full architecture. With a principled method for producing new geometric configurations, without requiring a bespoke sculpting environment, the previously established analysis engine can be applied directly, with targeted optimizations for real-time throughput. The geometric measures defined in the preceding section remain valid and can be evaluated continuously against the network\'s output to drive signal processing parameters.' },
+  { type: 'image', src: '/src/assets/untrained.png', alt: 'Untrained latent space' },
+  { type: 'p',  text: 'As established, rendering vertex sets exceeding 10,000 elements requires GPU delegation via OpenGL. wxWidgets was selected as the OpenGL host layer, providing window lifecycle management through a lightweight C++ application framework with built-in OpenGL context support. Constructing a conventional-feeling interface within this rendering context required a specific solution to a fundamental problem: in a standard 3D rendering pipeline, object positions are transformed by view and projection matrices before reaching the screen. Any UI element placed in world space would therefore shift, rotate, and scale with the camera, plainly unacceptable for a stable control surface.' },
+  { type: 'p',  text: 'The solution is to bypass the transformation pipeline entirely for interface objects. By supplying identity matrices in place of the view and projection transforms, vertex positions pass through the shader unmodified and are interpreted directly as Normalized Device Coordinates (NDC), the [-1, 1] coordinate space that maps linearly to the screen. An object positioned at NDC (0, 0) always occupies the screen center regardless of camera state. This effectively decouples the interface layer from the 3D scene without requiring a separate rendering context or immediate-mode fallback.' },
+  { type: 'p',  text: 'A secondary coordinate issue arises from mesh geometry conventions. OBJ files typically define flat or near-flat meshes in the XZ plane, with the Y axis as the height dimension. In screen space, however, the horizontal axis is X and the vertical axis is Y. A −90° rotation around the X axis resolves this: the mesh\'s Z coordinates are remapped onto the screen\'s Y axis, so that the two-dimensional screen footprint of any mesh is read directly from its X and Z vertex extents. The model matrix for each interface object is then composed as a translation in NDC, this rotation, and a uniform scale calibrated so the mesh fills its assigned slot. Mouse input is converted to NDC via a linear remap of pixel coordinates, and hit-testing is performed directly in that space by comparing cursor position against each object\'s pre-computed NDC bounding rectangle, with no ray-casting against the 3D scene required.' },
+  { type: 'p',  text: 'The interface is organized around an L-shaped geometry that subdivides the screen into two functional regions: an anchor panel along two edges and an open map region in the remaining area. Anchor meshes, the training samples provided by the user, are auto-laid out into equidistant slots along the L\'s two arms, each scaled to fit its slot uniformly. The map region constitutes the navigable latent space. The NDC position of each anchor within the map is normalized to a [0, 1]² coordinate that becomes its latent target during training. When the user drags an anchor to a new position on the map, the latent coordinate updates accordingly; anchors dragged outside the map bounds return to their home position via an exponential-decay animation.' },
+  { type: 'image', src: '/src/assets/trained.png', alt: 'Trained latent space' },
+  { type: 'image', src: '/src/assets/trained2.png', alt: 'Trained latent space 2' },
+  { type: 'p',  text: 'Rendering occurs in two passes per frame. The first pass draws the full scene (skybox, interface objects, and inferred mesh) into an offscreen framebuffer. The second pass applies a pixelation post-process: screen coordinates are quantized to a fixed block size before sampling the framebuffer texture, producing hard-edged pixel blocks. The block size is fixed at 4.7 screen pixels, and nearest-neighbor filtering on the framebuffer texture preserves the hard edges between blocks. This is not incidental: the pixelation is an intentional aesthetic carried forward from the earliest prototype and constitutes part of the visual language of the system.' },
+  { type: 'p',  text: 'Once a new mesh is inferred from the navigational position, the analysis engine described in the preceding section runs on the resulting vertex array. The computed geometric statistics (variance, centroid, spread, volume, density, and axis profiles) are transmitted in real time via OSC (Open Sound Control) over UDP to a local port. This produces 40 discrete messages per inference step, one per scalar or profile sample, addressable by any compatible environment. The audio processing layer receives these values as continuous modulation signals, mapping the geometric character of the inferred mesh directly onto signal processing parameters, closing the loop between the latent space navigation and the acoustic output.' },
+
+  { type: 'h2', text: 'References / Inspirations' },
+  { type: 'p',  text: 'Siddiqui, Yawar, et al. "MeshGPT: Generating Triangle Meshes with Decoder-Only Transformers." Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.' },
+  { type: 'p',  text: 'Shen, Yiyang, et al. "High-Fidelity 3D Object Generation from Single Image with RGBN-Volume Gaussian Reconstruction Model." Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2025.' },
+  { type: 'p',  text: 'Long, Xiaoxiao, et al. "Wonder3D: Single Image to 3D Using Cross-Domain Diffusion." Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.' },
+]; // yea genuinely worst way to make text, not the css replacement like they said thank god for claude.
+
+const STYLES = { // like what why do i have to do it this way
+  h1: { font: 'bold 34px Georgia, serif', lineHeight: 46, marginTop: 80, marginBottom: 28, color: '#111' },
+  h2: { font: 'bold 20px Georgia, serif', lineHeight: 32, marginTop: 44, marginBottom: 16, color: '#111' },
+  p:  { font: '17px Georgia, serif',      lineHeight: 28, marginTop: 0,  marginBottom: 22, color: '#222' },
+  eq:      { marginTop: 32, marginBottom: 32 },
+  eqrow:   { marginTop: 32, marginBottom: 32 },
+  callout: { marginTop: 48, marginBottom: 48 },
+  image:   { marginTop: 32, marginBottom: 32 },
+};
+
+const SHAPE_PADDING = 48;
+const MIN_SLOT_WIDTH = 60;
+const MAX_CONTENT_WIDTH = 680; // max text column width, feels like a printed page
+const MIN_H_PAD = 40;   
+const MAX_SPANS = 800;
+
+function getLayout() {
+  const contentWidth = Math.min(window.innerWidth - MIN_H_PAD * 2, MAX_CONTENT_WIDTH);
+  const contentLeft  = Math.round((window.innerWidth - contentWidth) / 2);
+  return { contentWidth, contentLeft };
+}
+
+
+// yea idek wtffff
+const blocks = CONTENT.map(b => ({
+  ...b,
+  style:    STYLES[b.type],
+  prepared: (b.type === 'h1' || b.type === 'h2' || b.type === 'p') ? prepareWithSegments(b.text, STYLES[b.type].font) : null,
+}));
+
+const textLayer = document.getElementById('text-layer');
+const spans = Array.from({ length: MAX_SPANS }, () => {
+  const s = document.createElement('span');
+  s.style.cssText = 'display:none;position:absolute;white-space:nowrap;';
+  textLayer.appendChild(s);
+  return s;
+});
+
+// #iusedclaude for tthis because i'm not learning latex html wrapper
+function makeEqCell(tex, caption) {
+  const cell = document.createElement('div');
+  // flex:1 1 0 + min-width:0 lets the cell shrink below KaTeX's intrinsic width
+  // min-width:180px triggers wrapping before content clips
+  cell.style.cssText = 'flex:1 1 180px;min-width:0;text-align:center;overflow:hidden;box-sizing:border-box;padding:0 8px;';
+  const mathWrap = document.createElement('div');
+  katex.render(tex, mathWrap, { throwOnError: false, displayMode: true });
+  cell.appendChild(mathWrap);
+  if (caption) {
+    const cap = document.createElement('p');
+    cap.textContent = caption;
+    cap.style.cssText = 'margin-top:8px;font:13px Georgia,serif;color:#888;text-align:center;';
+    cell.appendChild(cap);
+  }
+  return cell;
+}
+
+function initEquations() {
+  for (const block of blocks) {
+    if (block.type === 'eq') {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:absolute;overflow:hidden;text-align:center;';
+      div.appendChild(makeEqCell(block.tex, block.caption));
+      textLayer.appendChild(div);
+      block.el = div;
+    } else if (block.type === 'eqrow') {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:absolute;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px 0;';
+      for (const eq of block.eqs) div.appendChild(makeEqCell(eq.tex, eq.caption));
+      textLayer.appendChild(div);
+      block.el = div;
+    } else if (block.type === 'callout') {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:absolute;text-align:center;';
+      const inner = document.createElement('strong');
+      inner.textContent = block.text;
+      inner.style.cssText = 'font:bold 26px Georgia,serif;letter-spacing:0.01em;';
+      div.appendChild(inner);
+      textLayer.appendChild(div);
+      block.el = div;
+    } else if (block.type === 'image') {
+      const div = document.createElement('div');
+      const [rw, rh] = block.ratio || [10, 6];
+      div.style.cssText = `position:absolute;overflow:hidden;aspect-ratio:${rw}/${rh};`;
+      const img = document.createElement('img');
+      img.src = block.src;
+      img.alt = block.alt || '';
+      img.style.cssText = `width:100%;height:100%;object-fit:${block.contain ? 'contain' : 'cover'};display:block;`;
+      div.appendChild(img);
+      textLayer.appendChild(div);
+      block.el = div;
+    }
+  }
+}
+
+let scanlineCache = null; // { rows: Array<[x0,x1][]>, w, h }
+
+async function buildScanlines() {
+  const svgEl = document.getElementById('artwork');
+  const rect  = svgEl.getBoundingClientRect();
+  const w = Math.ceil(rect.width);
+  const h = Math.ceil(rect.height);
+  if (w < 2 || h < 2) return;
+
+  const svgString = new XMLSerializer().serializeToString(svgEl);
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url  = URL.createObjectURL(blob);
+
+  // takes all that svg shiiii and creates the offset for thetext.
+  await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = new OffscreenCanvas(w, h);
+      const ctx    = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const { data } = ctx.getImageData(0, 0, w, h);
+
+      const rows = [];
+      for (let row = 0; row < h; row++) {
+        const rowSpans = [];
+        let inSpan = false, x0 = 0;
+        for (let col = 0; col < w; col++) {
+          const alpha = data[(row * w + col) * 4 + 3];
+          if (alpha > 8  && !inSpan) { inSpan = true;  x0 = col; }
+          if (alpha <= 8 &&  inSpan) { inSpan = false; rowSpans.push([x0, col]); }
+        }
+        if (inSpan) rowSpans.push([x0, w]);
+        rows.push(rowSpans);
+      }
+      scanlineCache = { rows, w, h };
+      resolve();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+    img.src = url;
+  });
+}
+
+function carveSlots(totalWidth, blocked) {
+  let slots = [{ left: 0, right: totalWidth }];
+  for (const b of blocked) {
+    const next = [];
+    for (const slot of slots) {
+      if (b.right <= slot.left || b.left >= slot.right) {
+        next.push(slot);
+      } else {
+        if (b.left  > slot.left)  next.push({ left: slot.left, right: b.left });
+        if (b.right < slot.right) next.push({ left: b.right,   right: slot.right });
+      }
+    }
+    slots = next;
+  }
+  return slots.filter(s => s.right - s.left >= MIN_SLOT_WIDTH);
+}
+
+function getBlockedForDocY(docY, contentLeft) {
+  if (!scanlineCache) return [];
+  const rect = document.getElementById('artwork').getBoundingClientRect();
+  const t    = (docY - window.scrollY - rect.top) / rect.height;
+  const row  = Math.round(t * scanlineCache.h);
+  if (row < 0 || row >= scanlineCache.h) return [];
+  const scaleX = rect.width / scanlineCache.w;
+  return scanlineCache.rows[row].map(([c0, c1]) => ({
+    left:  rect.left - contentLeft + c0 * scaleX - SHAPE_PADDING,
+    right: rect.left - contentLeft + c1 * scaleX + SHAPE_PADDING,
+  }));
+}
+
+// yea uh i didn't write this part
+function render() {
+  const { contentWidth, contentLeft } = getLayout();
+  let spanIdx = 0;
+  let y = 0;
+
+  for (const block of blocks) {
+    const { style } = block;
+    y += style.marginTop;
+
+    if (block.type === 'eq' || block.type === 'eqrow' || block.type === 'callout' || block.type === 'image') {
+      block.el.style.left  = `${contentLeft}px`;
+      block.el.style.width = `${contentWidth}px`;
+      block.el.style.top   = `${y}px`;
+      if (block.type === 'image') {
+        const [rw, rh] = block.ratio || [10, 6];
+        const h = Math.round(contentWidth * rh / rw);
+        block.el.style.height = `${h}px`;
+        y += h;
+      } else {
+        y += block.el.offsetHeight;
+      }
+    } else {
+      const { prepared } = block;
+      let cursor = { segmentIndex: 0, graphemeIndex: 0 };
+
+      while (spanIdx < MAX_SPANS - 4) {
+        const blocked = getBlockedForDocY(y + style.lineHeight / 2, contentLeft);
+        const slots   = carveSlots(contentWidth, blocked);
+
+        if (slots.length === 0) { y += style.lineHeight; continue; }
+
+        let anyLine = false;
+        for (const slot of slots) {
+          const line = layoutNextLine(prepared, cursor, slot.right - slot.left);
+          if (!line) break;
+
+          // yea like what
+          const s = spans[spanIdx++];
+          s.style.display    = '';
+          s.style.font       = style.font;
+          s.style.lineHeight = `${style.lineHeight}px`;
+          s.style.color      = style.color;
+          s.style.left       = `${contentLeft + slot.left}px`;
+          s.style.top        = `${y}px`;
+          s.textContent      = line.text;
+          cursor = line.end;
+          anyLine = true;
+        }
+
+        if (!anyLine) break;
+        y += style.lineHeight;
+      }
+    }
+
+    y += style.marginBottom;
+  }
+
+  for (let i = spanIdx; i < MAX_SPANS; i++) spans[i].style.display = 'none';
+  textLayer.style.height = `${y + 80}px`;
+}
+
+let rafId = null;
+function schedule() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => { rafId = null; render(); });
+}
+
+window.addEventListener('scroll', schedule, { passive: true });
+window.addEventListener('resize', () => { scanlineCache = null; buildScanlines().then(schedule); });
+
+// KaTeX loads via defer, so wait for DOMContentLoaded before init
+window.addEventListener('DOMContentLoaded', () => {
+  initEquations();
+  buildScanlines().then(() => render());
+});

@@ -1,13 +1,43 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>horse.beer</title>
-    <link rel="stylesheet" href="src/css/style.css">
-    <link rel="icon" href="src/assets/icon.png" type="image/x-icon">
-  </head>
-  <body>
-    <h1>horse.beer</h1>
-    <canvas id="m"></canvas>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>horse.beer</title>
+  <link rel="stylesheet" href="./src/css/style.css">
+</head>
+<body class="loading">
+  <canvas id="m"></canvas>
+  <pre id="e"></pre>
+  <h1 class="brand">horse.beer</h1>
+  <p class="status">is loading</p>
+  <p class="hint">scroll to see more</p>
+  <h2 class="credit"><a href="https://www.instagram.com/publicservices.web/" target="_blank" rel="noopener noreferrer">jake morgan (@publicservices.web)</a></h2>
+  <nav class="menu">
+    <button type="button" data-view="bldng">prints</button>
+    <button type="button" data-view="gllry">gallery</button>
+    <button type="button" data-view="info">info</button>
+  </nav>
+  <button type="button" class="return" data-view="return">return</button>
+  <section class="shop">
+    <h2>prints:</h2>
+    <p>these works are available for prints</p>
+    <p>if you're on this website i probably know you. if you want a print just text me :) if i don't know you please email <a href="mailto:jake@termitestudio.com">jake@termitestudio.com</a> and i'll send you one.</p>
+    <p>i'm currently trying to get a screen printing setup so i can print my raymarched designs on random shirts or whatever so i'll post those here when i get one.</p>
+    <p>for web commissions please text me if you know me. if not: <a href="mailto:jake@termitestudio.com">jake@termitestudio.com</a></p>
+    <p>-jake</p>
+  </section>
+  <section class="prints">
+    <button type="button" class="print"><img src="./assets/prints/hexswap3.png" alt="hexswap3"></button>
+    <button type="button" class="print"><img src="./assets/prints/hexswap.png" alt="hexswap"></button>
+    <button type="button" class="print"><img src="./assets/prints/hexswap2.png" alt="hexswap2"></button>
+    <button type="button" class="print"><img src="./assets/prints/epic3.gif" alt="epic3"></button>
+    <button type="button" class="print"><img src="./assets/prints/engine.png" alt="untitled_rendering_engine"></button>
+  </section>
+  <div class="print_big"><img alt=""></div>
+  <section class="info">
+    <p>i make lots of code for graphics and graphics processing. i like shaders and mostly learn all my shader material from things on shadertoy. i went to calarts for music technology for my undergrad. i took a lot of classes doing experimental tech-art and music installations. i am a creative technologist and an artist in residence at karmetik. i live code music. right now i'm trying to bring my work into the physical world through various printing mediums.</p>
+  </section>
+  <script type="module" src="./src/js/scene1.js"></script>
+</body>
 </html>

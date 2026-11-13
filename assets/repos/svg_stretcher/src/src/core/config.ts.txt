@@ -1,0 +1,11 @@
+export const FIT_FILL = 0.7;   // fraction of the window the svg fills on load
+export const GRID_COLS = 8;    
+export const GRID_ROWS = 8;    
+export const MIN_GAP_PX = 7;   // smallest cell size on screen, in px
+export const HIT_PX = 14;      // how close the cursor must be to grab a line, in px
+
+export const RWS = 0.55;       // recursive width scale -- caps how far a corner cut shrinks
+export const RHS = 0.55;       // recursive height scale
+export const MORPH_MS = 100;   // original<->modified morph animation length (ms)
+export const RECURSE_DEPTH = 3;   // how many corner subdivisions the recurse button makes
+export const SVG_PATH = 'assets/fingerprint.svg';

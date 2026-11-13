@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>svg</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="controls">
+    <button id="btn-original" type="button">show original</button>
+    <button id="btn-modified" type="button">show modified</button>
+    <button id="btn-recurse" type="button">recurse corner</button>
+    <button id="btn-grid" type="button">regular grid</button>
+    <button id="btn-download" type="button">download svg</button>
+  </div>
+  <div id="svg-root"></div>
+  <script type="module" src="dist/core/main.js"></script>
+</body>
+</html>
